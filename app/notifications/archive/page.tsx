@@ -1,9 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getArchivedNotifications, AdminNotification } from "@/services/adminNotifications";
+import { getAdminNotificationsArchive } from "@/lib/services/adminNotifications";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Archive } from "lucide-react";
+
+type AdminNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  createdAt: string;
+  resolved: boolean;
+  isRead: boolean;
+  productId?: string;
+  userId?: string;
+};
 
 export default function NotificationsArchivePage() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
@@ -12,7 +24,8 @@ export default function NotificationsArchivePage() {
   useEffect(() => {
     const loadArchived = async () => {
       try {
-        const data = await getArchivedNotifications();
+        const token = localStorage.getItem("funkard_admin_token") || "";
+        const data = await getAdminNotificationsArchive(token);
         setNotifications(data);
       } catch (err) {
         console.error("Errore nel caricamento archivio notifiche:", err);

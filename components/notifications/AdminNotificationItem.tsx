@@ -2,7 +2,19 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { AdminNotification, markAsResolved } from "@/services/adminNotifications";
+import { markNotificationAsRead } from "@/lib/services/adminNotifications";
+
+type AdminNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  createdAt: string;
+  resolved: boolean;
+  isRead: boolean;
+  productId?: string;
+  userId?: string;
+};
 
 interface AdminNotificationItemProps {
   notification: AdminNotification;
@@ -75,7 +87,8 @@ export default function AdminNotificationItem({
   const handleResolve = async () => {
     try {
       setIsResolving(true);
-      await markAsResolved(notification.id);
+      const token = localStorage.getItem("funkard_admin_token") || "";
+      await markNotificationAsRead(token, notification.id);
       onResolved(notification.id.toString());
     } catch (error) {
       console.error("Errore nel risolvere la notifica:", error);

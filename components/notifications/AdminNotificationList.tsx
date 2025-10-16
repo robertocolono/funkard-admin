@@ -2,10 +2,21 @@
 
 import { useEffect, useState } from "react";
 import {
-  getActiveNotifications,
-  markNotificationAsResolved,
-  AdminNotification,
-} from "@/services/adminNotifications";
+  getAdminNotifications,
+  markNotificationAsRead,
+} from "@/lib/services/adminNotifications";
+
+type AdminNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  createdAt: string;
+  resolved: boolean;
+  isRead: boolean;
+  productId?: string;
+  userId?: string;
+};
 import { Loader2, CheckCircle, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,12 +24,13 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function AdminNotificationList() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [resolving, setResolving] = useState<number | null>(null);
+  const [resolving, setResolving] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getActiveNotifications();
+        const token = localStorage.getItem("funkard_admin_token") || "";
+        const data = await getAdminNotifications(token);
         setNotifications(data);
       } catch (err) {
         console.error("Errore nel caricamento notifiche:", err);
@@ -29,10 +41,11 @@ export default function AdminNotificationList() {
     fetchData();
   }, []);
 
-  const handleResolve = async (id: number) => {
+  const handleResolve = async (id: string) => {
     setResolving(id);
     try {
-      await markNotificationAsResolved(id);
+      const token = localStorage.getItem("funkard_admin_token") || "";
+      await markNotificationAsRead(token, id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error("Errore durante la risoluzione:", err);
