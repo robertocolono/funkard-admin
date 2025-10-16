@@ -76,7 +76,7 @@ export default function AdminNotificationItem({
     try {
       setIsResolving(true);
       await markAsResolved(notification.id);
-      onResolved(notification.id);
+      onResolved(notification.id.toString());
     } catch (error) {
       console.error("Errore nel risolvere la notifica:", error);
     } finally {
