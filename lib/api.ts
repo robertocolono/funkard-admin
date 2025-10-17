@@ -175,22 +175,58 @@ export async function getSupportTickets() {
 }
 
 /**
- * Recupera notifiche admin
+ * Recupera notifiche admin attive
  */
 export async function getNotifications() {
   return apiGet<Array<{
     id: number;
     title: string;
     message: string;
-    type: "MARKET" | "GRADING" | "SUPPORT" | "SYSTEM" | "USER" | "INFO";
-    severity: "INFO" | "WARN" | "ERROR" | "CRITICAL";
-    resolved: boolean;
-    createdAt: string;
+    type: "ERROR" | "MARKET" | "SUPPORT" | "SYSTEM" | "GRADING";
+    priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+    read_status: boolean;
+    created_at: string;
   }>>("/api/admin/notifications");
 }
 
 /**
- * Segna notifica come risolta
+ * Recupera notifiche archiviate
+ */
+export async function getArchivedNotifications() {
+  return apiGet<Array<{
+    id: number;
+    title: string;
+    message: string;
+    type: "ERROR" | "MARKET" | "SUPPORT" | "SYSTEM" | "GRADING";
+    priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+    created_at: string;
+    archived_at: string;
+  }>>("/api/admin/notifications/archive");
+}
+
+/**
+ * Segna notifica come letta
+ */
+export async function markNotificationAsRead(id: number) {
+  return apiPatch(`/api/admin/notifications/${id}/read`);
+}
+
+/**
+ * Archivia notifica
+ */
+export async function archiveNotification(id: number) {
+  return apiPatch(`/api/admin/notifications/archive/${id}`);
+}
+
+/**
+ * Elimina notifica definitivamente
+ */
+export async function deleteNotification(id: number) {
+  return apiDelete(`/api/admin/notifications/delete/${id}`);
+}
+
+/**
+ * Segna notifica come risolta (legacy)
  */
 export async function resolveNotification(id: number) {
   return apiPatch(`/api/admin/notifications/${id}/resolve`);
@@ -258,9 +294,9 @@ export async function cleanupNotifications() {
 }
 
 /**
- * Funzioni legacy per compatibilità
+ * Recupera valutazioni pending
  */
-export async function getPendingMarket() {
+export async function getPendingValuations() {
   return apiGet<Array<{
     id: string;
     name: string;
@@ -270,6 +306,24 @@ export async function getPendingMarket() {
     daysSinceLastUpdate: number;
     status: "pending";
   }>>("/api/admin/valuation/pending");
+}
+
+/**
+ * Controlla stato valutazione
+ */
+export async function checkValuationStatus(itemName: string) {
+  return apiGet<{
+    status: "pending" | "approved" | "rejected";
+    lastCheck: string;
+    nextCheck?: string;
+  }>(`/api/admin/valuation/check/${itemName}`);
+}
+
+/**
+ * Funzioni legacy per compatibilità
+ */
+export async function getPendingMarket() {
+  return getPendingValuations();
 }
 
 export async function getItemDetails(itemName: string) {

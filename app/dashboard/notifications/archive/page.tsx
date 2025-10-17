@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Archive, Clock, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getArchivedNotifications, deleteNotification } from "@/lib/api";
 
 interface Notification {
   id: number;
@@ -28,18 +29,7 @@ export default function ArchiveNotificationsPage() {
   useEffect(() => {
     const fetchArchived = async () => {
       try {
-        const res = await fetch(
-          "https://funkard-api.onrender.com/api/admin/notifications/archive",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            cache: "no-store",
-          }
-        );
-        if (!res.ok) throw new Error("Errore nel caricamento archivio");
-        const data = await res.json();
+        const data = await getArchivedNotifications();
         setNotifications(data);
       } catch (err) {
         console.error("❌ Errore fetch archivio:", err);
@@ -301,18 +291,7 @@ export default function ArchiveNotificationsPage() {
                       if (!confirm("Eliminare definitivamente questa notifica?")) return;
 
                       try {
-                        const res = await fetch(
-                          `https://funkard-api.onrender.com/api/admin/notifications/delete/${notif.id}`,
-                          {
-                            method: "DELETE",
-                            headers: {
-                              Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-                              "Content-Type": "application/json",
-                            },
-                          }
-                        );
-
-                        if (!res.ok) throw new Error("Errore durante eliminazione");
+                        await deleteNotification(notif.id);
                         setNotifications((prev) => prev.filter((n) => n.id !== notif.id)); // Rimuove subito dalla UI
                       } catch (err) {
                         console.error("❌ Errore:", err);

@@ -30,29 +30,11 @@ interface Notification {
   created_at: string;
 }
 
-// --- Fetch iniziale ---
-async function fetchAdminNotifications(token: string): Promise<Notification[]> {
-  const res = await fetch("https://funkard-api.onrender.com/api/admin/notifications", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("Errore nel caricamento notifiche");
-  return res.json();
-}
+import { getNotifications, markNotificationAsRead, archiveNotification } from "@/lib/api";
 
 // --- Segna come letta ---
 async function markAsRead(token: string, id: number) {
-  const res = await fetch(`https://funkard-api.onrender.com/api/admin/notifications/${id}/read`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) throw new Error("Errore nel segnare come letta");
+  await markNotificationAsRead(id);
 }
 
 
@@ -68,7 +50,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchAdminNotifications(token);
+        const data = await getNotifications();
         setNotifications(data);
       } catch (err) {
         console.error("❌ Errore fetch notifiche:", err);
