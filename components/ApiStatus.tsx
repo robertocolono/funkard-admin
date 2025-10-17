@@ -50,7 +50,7 @@ export default function ApiStatus() {
       case "checking":
         return <Badge variant="secondary">Verificando...</Badge>;
       case "connected":
-        return <Badge className="bg-green-100 text-green-800">Connesso</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">MOCK MODE</Badge>;
       case "error":
         return <Badge className="bg-red-100 text-red-800">Errore</Badge>;
     }
@@ -74,7 +74,7 @@ export default function ApiStatus() {
           {getStatusIcon()}
           <span className="text-sm">
             {status === "checking" && "Verificando connessione..."}
-            {status === "connected" && "Connesso al backend Funkard"}
+            {status === "connected" && "MOCK MODE - Backend disconnesso"}
             {status === "error" && "Errore di connessione"}
           </span>
         </div>
