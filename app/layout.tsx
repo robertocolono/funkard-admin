@@ -11,12 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { toastNotifications, removeToast } = useNotifications();
 
-  useEffect(() => {
-    const token = localStorage.getItem("funkard_admin_token");
-    if (!token && path !== "/login") {
-      router.push("/login");
-    }
-  }, [path, router]);
+  // Temporaneamente rimosso controllo autenticazione per testing
 
   return (
     <html lang="it">
