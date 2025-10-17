@@ -3,13 +3,16 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Archive } from "lucide-react";
+import { Loader2, Archive, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { DeleteArchivedModal } from "@/components/notifications/DeleteArchivedModal";
 
 export default function NotificationsPanel() {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
@@ -46,6 +49,27 @@ export default function NotificationsPanel() {
     }
   }
 
+  async function deleteArchived() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/notifications/cleanup`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+        },
+      });
+      if (!res.ok) throw new Error("Errore eliminazione archiviate");
+      toast({ title: "Archivio pulito", description: "Le notifiche archiviate sono state eliminate." });
+      await fetchNotifications(); // ricarica lista
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Errore", description: "Impossibile eliminare le notifiche archiviate.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  }
+
   const filtered = notifications.filter((n: any) =>
     filter === "all" ? true : n.type === filter
   );
@@ -63,17 +87,28 @@ export default function NotificationsPanel() {
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Notifiche Admin</h2>
-          <div className="space-x-2">
-            {["all", "system", "error", "support"].map((f) => (
-              <Button
-                key={f}
-                onClick={() => setFilter(f)}
-                variant={filter === f ? "default" : "outline"}
-                size="sm"
-              >
-                {f === "all" ? "Tutte" : f.charAt(0).toUpperCase() + f.slice(1)}
-              </Button>
-            ))}
+          <div className="flex items-center gap-2">
+            <div className="space-x-2">
+              {["all", "system", "error", "support"].map((f) => (
+                <Button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  variant={filter === f ? "default" : "outline"}
+                  size="sm"
+                >
+                  {f === "all" ? "Tutte" : f.charAt(0).toUpperCase() + f.slice(1)}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+              className="ml-2"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Elimina archiviate
+            </Button>
           </div>
         </div>
 
@@ -110,6 +145,14 @@ export default function NotificationsPanel() {
           </ul>
         )}
       </CardContent>
+      
+      {/* Modale conferma eliminazione archiviate */}
+      <DeleteArchivedModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={deleteArchived}
+        loading={deleting}
+      />
     </Card>
   );
 }
