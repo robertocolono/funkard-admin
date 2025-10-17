@@ -1,159 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MessageSquare, CheckCircle, Clock, XCircle, Search, Filter } from "lucide-react";
-import { apiGet } from "@/lib/api";
-
-interface Ticket {
-  id: string;
-  userEmail: string;
-  subject: string;
-  category: string;
-  status: "open" | "in_progress" | "closed";
-  createdAt: string;
-  updatedAt: string;
-}
+import { useState } from "react";
+import { mockTickets } from "@/lib/mockTickets";
+import { SupportTicket } from "@/types/SupportTicket";
+import { Mail, MessageSquare, CheckCircle, Archive, Clock, XCircle, User, Calendar, AlertTriangle } from "lucide-react";
 
 export default function SupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tickets, setTickets] = useState<SupportTicket[]>(mockTickets);
+  const [filter, setFilter] = useState<"all" | "open" | "pending" | "resolved">("all");
 
-  useEffect(() => {
-    // ✅ Attiveremo fetch reale dopo fix CORS:
-    /*
-    apiGet<Ticket[]>("/api/admin/support")
-      .then(setTickets)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-    */
+  const filtered = tickets.filter(
+    (t) => filter === "all" || t.status === filter
+  );
 
-    // Mock temporaneo per testing UI
-    setTimeout(() => {
-      setTickets([
-        {
-          id: "t_001",
-          userEmail: "mario.rossi@email.com",
-          subject: "Carta non arrivata",
-          category: "Ordini",
-          status: "open",
-          createdAt: "2025-01-12T09:32:00Z",
-          updatedAt: "2025-01-13T14:05:00Z"
-        },
-        {
-          id: "t_002",
-          userEmail: "collector95@gmail.com",
-          subject: "Errore su grading",
-          category: "Sistema",
-          status: "in_progress",
-          createdAt: "2025-01-10T15:00:00Z",
-          updatedAt: "2025-01-12T10:45:00Z"
-        },
-        {
-          id: "t_003",
-          userEmail: "lucia.bianchi@email.com",
-          subject: "Richiesta rimborso",
-          category: "Pagamenti",
-          status: "closed",
-          createdAt: "2025-01-08T11:20:00Z",
-          updatedAt: "2025-01-11T16:30:00Z"
-        },
-        {
-          id: "t_004",
-          userEmail: "giovanni.verdi@email.com",
-          subject: "Problema con autenticazione",
-          category: "Account",
-          status: "open",
-          createdAt: "2025-01-14T08:15:00Z",
-          updatedAt: "2025-01-14T08:15:00Z"
-        }
-      ]);
-      setLoading(false);
-    }, 800);
-  }, []);
-
-  // Filtri e ricerca
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = ticket.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Caricamento ticket...</p>
-      </div>
+  const markAsResolved = (id: string) => {
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, status: "resolved", updatedAt: new Date().toISOString() }
+          : t
+      )
     );
-  }
+  };
 
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-        <p className="text-red-600">Errore: {error}</p>
-      </div>
+  const archiveTicket = (id: string) => {
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, status: "archived", updatedAt: new Date().toISOString() }
+          : t
+      )
     );
-  }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      open: "bg-red-100 text-red-700",
+      pending: "bg-yellow-100 text-yellow-700",
+      resolved: "bg-green-100 text-green-700",
+      archived: "bg-gray-100 text-gray-700",
+    }[status];
+
+    const icons = {
+      open: <XCircle className="w-4 h-4" />,
+      pending: <Clock className="w-4 h-4" />,
+      resolved: <CheckCircle className="w-4 h-4" />,
+      archived: <Archive className="w-4 h-4" />,
+    }[status];
+
+    const label = {
+      open: "Aperto",
+      pending: "In attesa",
+      resolved: "Risolto",
+      archived: "Archiviato",
+    }[status];
+
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${styles}`}>
+        {icons}
+        {label}
+      </span>
+    );
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "text-red-500 border-red-500";
+      case "medium":
+        return "text-yellow-600 border-yellow-600";
+      case "low":
+        return "text-green-600 border-green-600";
+      default:
+        return "text-gray-500 border-gray-500";
+    }
+  };
 
   return (
-    <div>
-      <header className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Supporto & Segnalazioni</h2>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-zinc-800 transition">
-            Aggiorna
-          </button>
-          <button className="px-4 py-2 bg-yellow-400 text-black text-sm rounded-lg hover:bg-yellow-500 transition">
-            Esporta CSV
-          </button>
-        </div>
-      </header>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <MessageSquare className="w-6 h-6" /> Supporto & Segnalazioni
+        </h1>
 
-      {/* Filtri e ricerca */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Cerca per email o oggetto..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+        {/* Filtri */}
+        <div className="flex flex-wrap gap-2">
+          {["all", "open", "pending", "resolved"].map((f) => (
+            <button
+              key={f}
+              className={`px-3 py-1 text-sm rounded-md transition ${
+                filter === f
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+              onClick={() => setFilter(f as any)}
             >
-              <option value="all">Tutti gli stati</option>
-              <option value="open">Aperti</option>
-              <option value="in_progress">In corso</option>
-              <option value="closed">Risolti</option>
-            </select>
-            <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
-              <Filter className="w-4 h-4" />
+              {f === "all" ? "Tutti" : f === "open" ? "Aperti" : f === "pending" ? "In attesa" : "Risolti"}
             </button>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Statistiche rapide */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 rounded-lg">
               <XCircle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Ticket Aperti</p>
+              <p className="text-sm text-gray-600">Aperti</p>
               <p className="text-2xl font-bold text-red-600">
                 {tickets.filter(t => t.status === "open").length}
               </p>
@@ -166,9 +123,9 @@ export default function SupportPage() {
               <Clock className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">In Corso</p>
+              <p className="text-sm text-gray-600">In attesa</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {tickets.filter(t => t.status === "in_progress").length}
+                {tickets.filter(t => t.status === "pending").length}
               </p>
             </div>
           </div>
@@ -181,115 +138,109 @@ export default function SupportPage() {
             <div>
               <p className="text-sm text-gray-600">Risolti</p>
               <p className="text-2xl font-bold text-green-600">
-                {tickets.filter(t => t.status === "closed").length}
+                {tickets.filter(t => t.status === "resolved").length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Totale</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {tickets.length}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabella ticket */}
-      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
-        <table className="min-w-full text-sm text-gray-700">
-          <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-            <tr>
-              <th className="p-3 text-left">ID</th>
-              <th className="p-3 text-left">Utente</th>
-              <th className="p-3 text-left">Oggetto</th>
-              <th className="p-3 text-left">Categoria</th>
-              <th className="p-3 text-left">Stato</th>
-              <th className="p-3 text-left">Ultimo aggiornamento</th>
-              <th className="p-3 text-left">Azioni</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  {searchTerm || statusFilter !== "all" 
-                    ? "Nessun ticket trovato con i filtri applicati"
-                    : "Nessun ticket aperto"
-                  }
-                </td>
-              </tr>
-            ) : (
-              filteredTickets.map((t) => (
-                <tr key={t.id} className="border-t hover:bg-gray-50 transition">
-                  <td className="p-3 font-mono text-xs">{t.id}</td>
-                  <td className="p-3">
-                    <div>
-                      <p className="font-medium">{t.userEmail}</p>
-                      <p className="text-xs text-gray-500">
-                        Creato: {new Date(t.createdAt).toLocaleDateString("it-IT")}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">{t.subject}</p>
-                  </td>
-                  <td className="p-3">
+      {/* Lista ticket */}
+      <div className="grid gap-4">
+        {filtered.map((t) => (
+          <div
+            key={t.id}
+            className={`border-l-4 rounded-xl border bg-white shadow-sm ${
+              t.priority === "high"
+                ? "border-red-500"
+                : t.priority === "medium"
+                ? "border-yellow-500"
+                : "border-green-500"
+            }`}
+          >
+            <div className="p-4 flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <h3 className="font-semibold">{t.subject}</h3>
+                  {getStatusBadge(t.status)}
+                  <span className={`px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(t.priority)}`}>
+                    Priorità: {t.priority.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{t.message}</p>
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {t.user.name} ({t.user.email})
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(t.createdAt).toLocaleString("it-IT")}
+                  </span>
+                  {t.category && (
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                      {t.category}
+                      {t.category.toUpperCase()}
                     </span>
-                  </td>
-                  <td className="p-3">
-                    {getStatusBadge(t.status)}
-                  </td>
-                  <td className="p-3 text-gray-500">
-                    {new Date(t.updatedAt).toLocaleString("it-IT")}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex gap-1">
-                      <button className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition">
-                        Dettagli
-                      </button>
-                      {t.status === "open" && (
-                        <button className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded hover:bg-yellow-200 transition">
-                          In Corso
-                        </button>
-                      )}
-                      {t.status === "in_progress" && (
-                        <button className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 transition">
-                          Risolvi
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  )}
+                </div>
+                {t.adminResponse && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Risposta Admin:</p>
+                    <p className="text-sm text-blue-700">{t.adminResponse.message}</p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {new Date(t.adminResponse.timestamp).toLocaleString("it-IT")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 ml-4">
+                {t.status !== "resolved" && (
+                  <button
+                    onClick={() => markAsResolved(t.id)}
+                    className="px-3 py-1 bg-green-100 text-green-700 rounded-md text-xs hover:bg-green-200 transition flex items-center gap-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Risolvi
+                  </button>
+                )}
+                {t.status !== "archived" && (
+                  <button
+                    onClick={() => archiveTicket(t.id)}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs hover:bg-gray-200 transition flex items-center gap-1"
+                  >
+                    <Archive className="w-4 h-4" />
+                    Archivia
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">
+              Nessun ticket trovato con i filtri selezionati.
+            </p>
+          </div>
+        )}
       </div>
     </div>
-  );
-}
-
-function getStatusBadge(status: Ticket["status"]) {
-  const styles = {
-    open: "bg-red-100 text-red-700",
-    in_progress: "bg-yellow-100 text-yellow-700",
-    closed: "bg-green-100 text-green-700",
-  }[status];
-
-  const icons = {
-    open: <XCircle className="w-4 h-4" />,
-    in_progress: <Clock className="w-4 h-4" />,
-    closed: <CheckCircle className="w-4 h-4" />,
-  }[status];
-
-  const label = {
-    open: "Aperto",
-    in_progress: "In corso",
-    closed: "Risolto",
-  }[status];
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${styles}`}
-    >
-      {icons}
-      {label}
-    </span>
   );
 }

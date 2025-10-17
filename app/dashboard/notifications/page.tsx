@@ -1,22 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, CheckCircle, XCircle, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench } from "lucide-react";
 import { mockNotifications } from "@/lib/mockNotifications";
 import { AdminNotification } from "@/types/Notification";
+import { Bell, CheckCircle, XCircle, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench } from "lucide-react";
 
 export default function NotificationsPage() {
-  const [filter, setFilter] = useState<"all" | "unread" | "resolved">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "resolved">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "error" | "market" | "support" | "grading" | "system">("all");
   const [notifications, setNotifications] = useState<AdminNotification[]>(mockNotifications);
 
   const filtered = notifications.filter(
-    (n) => filter === "all" || n.status === filter
+    (n) =>
+      (statusFilter === "all" || n.status === statusFilter) &&
+      (typeFilter === "all" || n.type === typeFilter)
   );
 
   const markAsResolved = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) =>
-        n.id === id ? { ...n, status: "resolved", resolvedAt: new Date().toISOString() } : n
+        n.id === id
+          ? { ...n, status: "resolved", resolvedAt: new Date().toISOString() }
+          : n
       )
     );
   };
@@ -51,39 +56,46 @@ export default function NotificationsPage() {
     return colors[type] || "bg-gray-100 text-gray-700";
   };
 
-  const getImportanceColor = (importance: string) => {
-    switch (importance) {
-      case "high":
-        return "border-red-500 bg-red-50";
-      case "medium":
-        return "border-yellow-500 bg-yellow-50";
-      case "low":
-        return "border-green-500 bg-green-50";
-      default:
-        return "border-gray-500 bg-gray-50";
-    }
-  };
-
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Bell className="w-6 h-6" /> Notifiche Admin
         </h1>
-        <div className="flex space-x-2">
-          {["all", "unread", "resolved"].map((f) => (
-            <button
-              key={f}
-              className={`px-3 py-1 text-sm rounded-md transition ${
-                filter === f
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-              onClick={() => setFilter(f as any)}
-            >
-              {f === "all" ? "Tutte" : f === "unread" ? "Non lette" : "Risolte"}
-            </button>
-          ))}
+
+        {/* Filtri */}
+        <div className="flex flex-wrap gap-2">
+          {/* Filtro per Stato */}
+          <div className="flex gap-1">
+            {["all", "unread", "resolved"].map((f) => (
+              <button
+                key={f}
+                className={`px-3 py-1 text-sm rounded-md transition ${
+                  statusFilter === f
+                    ? "bg-black text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+                onClick={() => setStatusFilter(f as any)}
+              >
+                {f === "all" ? "Tutte" : f === "unread" ? "Non lette" : "Risolte"}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtro per Tipo */}
+          <select
+            className="border border-gray-300 rounded-md text-sm px-3 py-1 bg-white"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as any)}
+          >
+            <option value="all">Tutti i tipi</option>
+            <option value="error">Errori</option>
+            <option value="market">Mercato</option>
+            <option value="support">Supporto</option>
+            <option value="grading">Grading</option>
+            <option value="system">Sistema</option>
+          </select>
         </div>
       </div>
 
@@ -206,7 +218,7 @@ export default function NotificationsPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">
-              Nessuna notifica da mostrare.
+              Nessuna notifica trovata con i filtri selezionati.
             </p>
           </div>
         )}
