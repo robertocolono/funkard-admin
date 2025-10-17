@@ -4,6 +4,7 @@ import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield } from 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAdminRole, canAccess } from "@/lib/adminAuth";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -53,9 +54,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col">
+        {/* Topbar */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {nav.find(n => n.href === pathname)?.label || "Dashboard"}
+              </h2>
+            </div>
+            <div className="flex items-center space-x-4">
+              <NotificationBell />
+              <div className="text-sm text-gray-500">
+                Admin Panel
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
