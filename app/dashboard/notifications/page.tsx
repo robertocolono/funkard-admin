@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import {
   Loader2,
   Bell,
@@ -28,6 +29,8 @@ interface Notification {
   priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
   read_status: boolean;
   created_at: string;
+  readBy?: string;
+  readAt?: string;
 }
 
 import { getActiveNotifications, markNotificationAsRead, archiveNotification } from "@/services/adminService";
@@ -43,6 +46,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [sortMode, setSortMode] = useState<"chronological" | "priority">("chronological");
 
   const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN || "";
 
@@ -123,12 +127,32 @@ export default function NotificationsPage() {
     return priorityMatch && typeMatch;
   });
 
+  // --- Ordinamento intelligente ---
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortMode === "priority") {
+      const order = { HIGH: 3, MEDIUM: 2, LOW: 1, INFO: 0 };
+      if (order[b.priority] !== order[a.priority]) {
+        return order[b.priority] - order[a.priority];
+      }
+      // in caso di priorità uguale → ordina per data decrescente
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else {
+      // cronologico: dalla più vecchia alla più nuova
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }
+  });
+
   const handleMarkAsRead = async (id: number) => {
     try {
       await markAsRead(token, id);
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === id ? { ...n, read_status: true } : n
+          n.id === id ? { 
+            ...n, 
+            read_status: true, 
+            readBy: "AdminPanel", 
+            readAt: new Date().toISOString() 
+          } : n
         )
       );
     } catch (err) {
@@ -194,7 +218,7 @@ export default function NotificationsPage() {
           </Link>
         </div>
 
-        {/* Filtri */}
+        {/* Filtri e Ordinamento */}
         <div className="flex flex-wrap gap-2">
           {/* Filtro per Priorità */}
           <div className="flex gap-1">
@@ -226,6 +250,17 @@ export default function NotificationsPage() {
             <option value="SYSTEM">Sistema</option>
             <option value="GRADING">Grading</option>
           </select>
+
+          {/* Ordinamento */}
+          <Select value={sortMode} onValueChange={(v) => setSortMode(v as any)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Ordina per..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chronological">🕓 Cronologico (vecchie → nuove)</SelectItem>
+              <SelectItem value="priority">⚠️ Per importanza</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -287,7 +322,7 @@ export default function NotificationsPage() {
 
       {/* Lista notifiche */}
       <div className="grid gap-4">
-        {filtered.length === 0 ? (
+        {sorted.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">
@@ -295,12 +330,12 @@ export default function NotificationsPage() {
             </p>
           </div>
         ) : (
-          filtered.map((notif) => (
+          sorted.map((notif) => (
             <Card
               key={notif.id}
               className={`border-l-4 transition-all hover:shadow-md ${
                 getPriorityColor(notif.priority)
-              } ${notif.read_status ? "opacity-60" : ""}`}
+              } ${notif.read_status ? "border-gray-200 bg-gray-50" : "border-blue-300 bg-white"}`}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -334,17 +369,24 @@ export default function NotificationsPage() {
                   </span>
                 </div>
 
-                <div className="flex gap-2">
-                  {!notif.read_status && (
-                    <Button
-                      size="sm"
-                      variant="outline"
+                <div className="text-[11px] text-gray-400 mt-2 flex justify-between items-center">
+                  <span>{new Date(notif.created_at).toLocaleString()}</span>
+                  {notif.read_status ? (
+                    <span className="text-green-600 text-[11px]">
+                      ✅ Letta da <b>{notif.readBy || "—"}</b> alle{" "}
+                      {notif.readAt ? new Date(notif.readAt).toLocaleTimeString() : ""}
+                    </span>
+                  ) : (
+                    <button
                       onClick={() => handleMarkAsRead(notif.id)}
+                      className="text-blue-600 text-[11px] hover:underline"
                     >
-                      <EyeOff className="w-4 h-4 mr-1" /> Segna come letta
-                    </Button>
+                      Segna come letta
+                    </button>
                   )}
+                </div>
 
+                <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
