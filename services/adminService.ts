@@ -154,3 +154,8 @@ export async function clearCache() {
 export async function cleanupNotifications() {
   return apiFetch("/api/admin/system/cleanup-notifications", { method: "POST" });
 }
+
+// 📋 Recupera storico azioni per un oggetto specifico
+export async function getActionHistory(targetType: string, targetId: number) {
+  return apiFetch(`/api/admin/history/${targetType.toUpperCase()}/${targetId}`);
+}

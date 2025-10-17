@@ -373,7 +373,14 @@ export default function NotificationsPage() {
 
                   {/* Titolo e Messaggio */}
                   <div className="col-span-4">
-                    <div className="font-semibold text-sm">{notif.title}</div>
+                    <div className="font-semibold text-sm">
+                      <Link 
+                        href={`/dashboard/notifications/${notif.id}`}
+                        className="hover:text-blue-600 hover:underline"
+                      >
+                        {notif.title}
+                      </Link>
+                    </div>
                     <div className="text-xs text-gray-600 mt-1">{notif.message}</div>
                   </div>
 
