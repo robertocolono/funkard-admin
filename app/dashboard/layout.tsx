@@ -1,11 +1,13 @@
 "use client";
 
-import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings } from "lucide-react";
+import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAdminRole, canAccess } from "@/lib/adminAuth";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { role } = useAdminRole();
 
   const nav = [
     { label: "Dashboard", icon: <BarChart3 />, href: "/dashboard" },
@@ -15,6 +17,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: "Notifiche", icon: <Bell />, href: "/dashboard/notifications" },
     { label: "Impostazioni", icon: <Settings />, href: "/dashboard/settings" },
   ];
+
+  // Mostra "Staff" solo se permesso
+  if (canAccess(role, "staff")) {
+    nav.push({ label: "Staff", icon: <Shield />, href: "/dashboard/staff" });
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
