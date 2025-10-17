@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { mockTickets } from "@/lib/mockTickets";
+import { useState, useEffect } from "react";
+import { getSupportTickets, respondToTicket, closeTicket } from "@/services/adminService";
 import { SupportTicket } from "@/types/SupportTicket";
 import {
   MessageSquare,
@@ -14,10 +14,36 @@ import {
 } from "lucide-react";
 
 export default function SupportPage() {
-  const [tickets, setTickets] = useState<SupportTicket[]>(mockTickets);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [filter, setFilter] = useState<"all" | "open" | "pending" | "resolved">("all");
   const [selected, setSelected] = useState<SupportTicket | null>(null);
   const [reply, setReply] = useState("");
+
+  // Carica ticket dal backend
+  useEffect(() => {
+    const loadTickets = async () => {
+      try {
+        const data = await getSupportTickets();
+        setTickets(data);
+      } catch (err) {
+        console.error("❌ Errore caricamento ticket:", err);
+        // Fallback a mock data se API non disponibile
+        setTickets([
+          {
+            id: "1",
+            user: { id: "u1", name: "Luca Rossi", email: "luca@example.com" },
+            subject: "Problema con pagamento",
+            message: "Ho completato il pagamento ma l'ordine non risulta.",
+            createdAt: "2025-10-16T14:25:00Z",
+            status: "open",
+            priority: "medium",
+          },
+        ]);
+      }
+    };
+
+    loadTickets();
+  }, []);
 
   const filtered = tickets.filter(
     (t) => filter === "all" || t.status === filter

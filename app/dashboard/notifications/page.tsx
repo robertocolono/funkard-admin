@@ -30,7 +30,7 @@ interface Notification {
   created_at: string;
 }
 
-import { getNotifications, markNotificationAsRead, archiveNotification } from "@/lib/api";
+import { getActiveNotifications, markNotificationAsRead, archiveNotification } from "@/services/adminService";
 
 // --- Segna come letta ---
 async function markAsRead(token: string, id: number) {
@@ -50,7 +50,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getNotifications();
+        const data = await getActiveNotifications();
         setNotifications(data);
       } catch (err) {
         console.error("❌ Errore fetch notifiche:", err);

@@ -1,17 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { mockUsers } from "@/lib/mockUsers";
+import { useState, useEffect } from "react";
+import { getUsers, updateUserStatus } from "@/services/adminService";
 import { AdminUser } from "@/types/User";
 import { Users, Ban, Eye, UserMinus, Search, Activity, User as UserIcon, Mail, Phone, MapPin } from "lucide-react";
 import { mockActivities } from "@/lib/mockActivities";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>(mockUsers);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "suspended" | "banned">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<AdminUser | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "activity">("profile");
+
+  // Carica utenti dal backend
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await getUsers();
+        setUsers(data);
+      } catch (err) {
+        console.error("❌ Errore caricamento utenti:", err);
+        // Fallback a mock data se API non disponibile
+        setUsers([
+          {
+            id: "u1",
+            name: "Luca Rossi",
+            email: "luca@example.com",
+            joinedAt: "2025-09-10T10:15:00Z",
+            lastLogin: "2025-10-16T22:30:00Z",
+            status: "active",
+            cards: 12,
+            orders: 4,
+            reports: 0,
+          },
+        ]);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const filtered = users.filter(
     (u) =>
