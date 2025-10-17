@@ -55,17 +55,6 @@ async function markAsRead(token: string, id: number) {
   if (!res.ok) throw new Error("Errore nel segnare come letta");
 }
 
-// --- Archivia notifica ---
-async function archiveNotification(token: string, id: number) {
-  const res = await fetch(`https://funkard-api.onrender.com/api/admin/notifications/${id}/archive`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) throw new Error("Errore nell'archiviazione");
-}
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -165,14 +154,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleArchive = async (id: number) => {
-    try {
-      await archiveNotification(token, id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    } catch (err) {
-      console.error("Errore archive:", err);
-    }
-  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -384,10 +365,28 @@ export default function NotificationsPage() {
 
                   <Button
                     size="sm"
-                    variant="destructive"
-                    onClick={() => handleArchive(notif.id)}
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(
+                          `https://funkard-api.onrender.com/api/admin/notifications/archive/${notif.id}`,
+                          {
+                            method: "PATCH",
+                            headers: {
+                              Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                              "Content-Type": "application/json",
+                            },
+                          }
+                        );
+
+                        if (!res.ok) throw new Error("Errore durante archiviazione");
+                        setNotifications((prev) => prev.filter((n) => n.id !== notif.id)); // Rimuove subito dalla UI
+                      } catch (err) {
+                        console.error("❌ Errore:", err);
+                      }
+                    }}
                   >
-                    <Archive className="w-4 h-4 mr-1" /> Archivia
+                    🗄️ Archivia
                   </Button>
                 </div>
               </CardContent>
