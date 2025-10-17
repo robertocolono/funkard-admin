@@ -1,135 +1,115 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getStats, getMarketOverview, getSupportStats } from "@/lib/api";
-import { useNotifications } from "@/lib/hooks/useNotifications";
-import CardStat from "@/components/CardStat";
-import NotificationTest from "@/components/NotificationTest";
-import ToastTest from "@/components/ToastTest";
-import ApiStatus from "@/components/ApiStatus";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
-} from "recharts";
+import { useState, useEffect } from "react";
+import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings } from "lucide-react";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
-  const [marketData, setMarketData] = useState<any[]>([]);
-  const [supportData, setSupportData] = useState<any[]>([]);
-  const { isConnected } = useNotifications();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    users: 124,
+    products: 512,
+    sales: 76,
+    tickets: 3,
+  });
 
   useEffect(() => {
-    getStats().then(setStats);
-    getMarketOverview().then(setMarketData);
-    getSupportStats().then(setSupportData);
+    // simulazione fetch per ora
+    setTimeout(() => setLoading(false), 800);
   }, []);
 
-  if (!stats) return <p className="text-gray-400">Caricamento dati...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-700">
+        <p>Caricamento dati...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10">
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold mb-2 text-yellow-400">📊 Dashboard Funkard Admin</h1>
-        <p className="text-gray-400 text-sm">Controllo operativo e stato del sistema in tempo reale</p>
-      </div>
+    <div className="flex h-screen bg-gray-50 text-gray-900">
+      {/* Sidebar */}
+      <aside className="w-64 bg-black text-white flex flex-col justify-between">
+        <div>
+          <h1 className="text-2xl font-bold px-6 py-6 tracking-tight">Funkard Admin</h1>
+          <nav className="flex flex-col space-y-1 px-3">
+            <NavItem icon={<BarChart3 />} label="Dashboard" active />
+            <NavItem icon={<Users />} label="Utenti" href="/dashboard/users" />
+            <NavItem icon={<ShoppingBag />} label="Market" href="/dashboard/market" />
+            <NavItem icon={<LifeBuoy />} label="Support" href="/dashboard/support" />
+            <NavItem icon={<Bell />} label="Notifiche" href="/dashboard/notifications" />
+            <NavItem icon={<Settings />} label="Impostazioni" href="/dashboard/settings" />
+          </nav>
+        </div>
+        <div className="text-center text-xs text-gray-400 py-4">
+          v1.0 • Funkard © 2025
+        </div>
+      </aside>
 
-      {/* STAT BOXES */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <CardStat title="Utenti" value={stats.users} />
-        <CardStat title="Carte" value={stats.cards} />
-        <CardStat title="Pending" value={stats.pending} />
-        <CardStat title="Ticket aperti" value={stats.tickets} />
-      </div>
-
-      {/* API STATUS */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <ApiStatus />
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-          <h2 className="text-lg font-semibold mb-4 text-yellow-400">🔔 Sistema Notifiche</h2>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-              <span className="text-sm">
-                {isConnected ? 'Connesso alle notifiche real-time' : 'Disconnesso dalle notifiche'}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">
-              Server-Sent Events per notifiche in tempo reale
-            </p>
+      {/* Main */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        <header className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-semibold">Dashboard</h2>
+          <div className="relative">
+            <Bell className="w-6 h-6 text-gray-700 cursor-pointer hover:text-yellow-500 transition" />
+            <span className="absolute -top-1 -right-1 bg-yellow-400 w-3 h-3 rounded-full"></span>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* MARKET TREND */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-        <h2 className="text-lg font-semibold mb-4 text-yellow-400">📈 Andamento Market (ultimi 7 giorni)</h2>
-        {marketData.length === 0 ? (
-          <p className="text-gray-500">Nessun dato disponibile.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={marketData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2d2d2d" />
-              <XAxis dataKey="day" stroke="#aaa" />
-              <YAxis stroke="#aaa" />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1c1c1c", border: "1px solid #333" }}
-              />
-              <Line type="monotone" dataKey="newProducts" stroke="#facc15" name="Nuovi prodotti" />
-              <Line type="monotone" dataKey="pendingItems" stroke="#f87171" name="Pending" />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </section>
+        {/* Stats cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard label="Utenti" value={stats.users} />
+          <StatCard label="Carte" value={stats.products} />
+          <StatCard label="Vendite" value={stats.sales} />
+          <StatCard label="Ticket aperti" value={stats.tickets} />
+        </section>
 
-      {/* SUPPORT TICKETS */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-        <h2 className="text-lg font-semibold mb-4 text-yellow-400">🎧 Ticket Supporto (ultimi 30 giorni)</h2>
-        {supportData.length === 0 ? (
-          <p className="text-gray-500">Nessun dato disponibile.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={supportData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2d2d2d" />
-              <XAxis dataKey="day" stroke="#aaa" />
-              <YAxis stroke="#aaa" />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1c1c1c", border: "1px solid #333" }}
-              />
-              <Bar dataKey="opened" fill="#f87171" name="Aperti" />
-              <Bar dataKey="closed" fill="#4ade80" name="Chiusi" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </section>
+        {/* Placeholder section */}
+        <section className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+          <h3 className="text-lg font-medium mb-2">Andamento generale</h3>
+          <p className="text-gray-600 text-sm">
+            Qui mostreremo grafici, statistiche di mercato e attività recenti.
+          </p>
+        </section>
+      </main>
+    </div>
+  );
+}
 
-      {/* INFO NOTIFICHE */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-yellow-400">🔔 Sistema Notifiche</h2>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-            <span className="text-xs text-gray-400">
-              {isConnected ? 'Connesso in tempo reale' : 'Disconnesso'}
-            </span>
-          </div>
-        </div>
-        <div className="text-sm text-gray-400">
-          <p>• Le notifiche vengono ricevute in tempo reale tramite Server-Sent Events</p>
-          <p>• Clicca sulla campanella nella navbar per visualizzare tutte le notifiche</p>
-          <p>• Le notifiche vengono automaticamente aggiornate quando il backend le crea</p>
-        </div>
-      </section>
+/* 🧩 Components */
 
-      {/* TEST NOTIFICHE */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-        <NotificationTest />
-      </section>
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  href?: string;
+  active?: boolean;
+}
 
-      {/* TEST TOAST */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-        <ToastTest />
-      </section>
+function NavItem({ icon, label, href = "#", active = false }: NavItemProps) {
+  return (
+    <a
+      href={href}
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+        active
+          ? "bg-yellow-400 text-black font-medium"
+          : "hover:bg-zinc-800 text-gray-300 hover:text-white"
+      }`}
+    >
+      <span className="w-5 h-5">{icon}</span>
+      <span>{label}</span>
+    </a>
+  );
+}
+
+interface StatCardProps {
+  label: string;
+  value: number;
+}
+
+function StatCard({ label, value }: StatCardProps) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 text-center hover:shadow-md transition">
+      <h4 className="text-gray-500 text-sm">{label}</h4>
+      <p className="text-3xl font-bold mt-2 text-black">{value}</p>
     </div>
   );
 }

@@ -15,10 +15,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <html lang="it">
-      <body className="min-h-screen bg-zinc-950 text-gray-200">
-        <div className="min-h-screen bg-zinc-950 text-gray-200">
-          {path !== "/login" && <Navbar />}
-          <main className="p-6">{children}</main>
+      <body className="min-h-screen bg-gray-50 text-gray-900">
+        <div className="min-h-screen">
+          {children}
           
           {/* Toast Notifications */}
           {toastNotifications.map((notification) => (
@@ -33,13 +32,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Sonner Toaster */}
         <Toaster
           position="bottom-right"
-          theme="dark"
+          theme="light"
           richColors
           toastOptions={{
             style: { 
-              background: "#121212", 
-              color: "#fff", 
-              border: "1px solid #333",
+              background: "#ffffff", 
+              color: "#000", 
+              border: "1px solid #e5e7eb",
               borderRadius: "8px"
             },
           }}
