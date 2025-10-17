@@ -6,6 +6,7 @@ import { useNotifications } from "@/lib/hooks/useNotifications";
 import CardStat from "@/components/CardStat";
 import NotificationTest from "@/components/NotificationTest";
 import ToastTest from "@/components/ToastTest";
+import ApiStatus from "@/components/ApiStatus";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar
@@ -39,6 +40,25 @@ export default function DashboardPage() {
         <CardStat title="Carte" value={stats.cards} />
         <CardStat title="Pending" value={stats.pending} />
         <CardStat title="Ticket aperti" value={stats.tickets} />
+      </div>
+
+      {/* API STATUS */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <ApiStatus />
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
+          <h2 className="text-lg font-semibold mb-4 text-yellow-400">🔔 Sistema Notifiche</h2>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+              <span className="text-sm">
+                {isConnected ? 'Connesso alle notifiche real-time' : 'Disconnesso dalle notifiche'}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              Server-Sent Events per notifiche in tempo reale
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* MARKET TREND */}

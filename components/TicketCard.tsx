@@ -35,7 +35,7 @@ export default function TicketCard({ ticket, onUpdate }: TicketCardProps) {
     
     setIsResponding(true);
     try {
-      await respondToTicket(ticket.id, response);
+      await respondToTicket(parseInt(ticket.id), response);
       setResponse('');
       onUpdate?.();
     } catch (error) {
@@ -47,7 +47,7 @@ export default function TicketCard({ ticket, onUpdate }: TicketCardProps) {
 
   const handleClose = async () => {
     try {
-      await closeTicket(ticket.id);
+      await closeTicket(parseInt(ticket.id));
       onUpdate?.();
     } catch (error) {
       console.error('Failed to close ticket:', error);

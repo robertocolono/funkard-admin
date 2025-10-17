@@ -27,7 +27,7 @@ export default function ItemDetailPage() {
     if (!item || !suggestedPrice) return;
     
     try {
-      await approveItem(item.id, suggestedPrice);
+      await approveItem(item.id);
       alert("Prodotto approvato con successo!");
       window.history.back();
     } catch (error) {
@@ -40,7 +40,7 @@ export default function ItemDetailPage() {
     if (!item || !rejectReason.trim()) return;
     
     try {
-      await rejectItem(item.id, rejectReason);
+      await rejectItem(item.id);
       alert("Prodotto rifiutato con successo!");
       window.history.back();
     } catch (error) {

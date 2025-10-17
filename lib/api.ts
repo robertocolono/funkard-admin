@@ -1,154 +1,208 @@
-import { PendingItem, Ticket, User, Stats, SystemSettings } from './types';
-
 const base = process.env.NEXT_PUBLIC_API_URL!;
 
-const getAuthHeaders = () => ({
-  "X-Admin-Token": localStorage.getItem("funkard_admin_token") || ""
-});
+/**
+ * Ping dell'API backend per verificare la connessione
+ */
+export async function pingAPI() {
+  const res = await fetch(`${base}/api/admin/ping`, {
+    headers: {
+      Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+    },
+  });
+  
+  if (!res.ok) {
+    throw new Error(`API Error ${res.status}: ${res.statusText}`);
+  }
+  
+  return res.json();
+}
 
-// Dashboard API
-export async function getStats(): Promise<Stats> {
+/**
+ * Recupera le statistiche generali
+ */
+export async function getStats() {
   const res = await fetch(`${base}/api/admin/stats`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch stats');
   return res.json();
 }
 
-// Market API
-export async function getPendingMarket(): Promise<PendingItem[]> {
+/**
+ * Recupera i dati del mercato
+ */
+export async function getPendingMarket() {
   const res = await fetch(`${base}/api/admin/valuation/pending`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch pending market');
   return res.json();
 }
 
-export async function getItemDetails(itemName: string): Promise<PendingItem> {
-  const res = await fetch(`${base}/api/admin/valuation/item/${encodeURIComponent(itemName)}`, {
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch item details');
-  return res.json();
-}
-
-export async function approveItem(itemId: string, price: number): Promise<void> {
-  const res = await fetch(`${base}/api/admin/valuation/approve`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ itemId, price })
-  });
-  if (!res.ok) throw new Error('Failed to approve item');
-}
-
-export async function rejectItem(itemId: string, reason: string): Promise<void> {
-  const res = await fetch(`${base}/api/admin/valuation/reject`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ itemId, reason })
-  });
-  if (!res.ok) throw new Error('Failed to reject item');
-}
-
-// Support API
-export async function getSupportTickets(): Promise<Ticket[]> {
+/**
+ * Recupera i ticket di supporto
+ */
+export async function getSupportTickets() {
   const res = await fetch(`${base}/api/admin/support/tickets`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch support tickets');
   return res.json();
 }
 
-export async function respondToTicket(ticketId: string, response: string): Promise<void> {
-  const res = await fetch(`${base}/api/admin/support/respond`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ ticketId, response })
-  });
-  if (!res.ok) throw new Error('Failed to respond to ticket');
-}
-
-export async function closeTicket(ticketId: string): Promise<void> {
-  const res = await fetch(`${base}/api/admin/support/close`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ ticketId })
-  });
-  if (!res.ok) throw new Error('Failed to close ticket');
-}
-
-// Users API
-export async function getUsers(): Promise<User[]> {
-  const res = await fetch(`${base}/api/admin/users`, {
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch users');
-  return res.json();
-}
-
-export async function updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<void> {
-  const res = await fetch(`${base}/api/admin/users/status`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ userId, status })
-  });
-  if (!res.ok) throw new Error('Failed to update user status');
-}
-
-// Settings API
-export async function getSystemSettings(): Promise<SystemSettings> {
-  const res = await fetch(`${base}/api/admin/settings`, {
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch system settings');
-  return res.json();
-}
-
-// Dashboard Analytics API
-export async function getMarketOverview(): Promise<any[]> {
+/**
+ * Recupera l'overview del mercato
+ */
+export async function getMarketOverview() {
   const res = await fetch(`${base}/api/admin/valuation/overview`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch market overview');
   return res.json();
 }
 
-export async function getSupportStats(): Promise<any[]> {
+/**
+ * Recupera le statistiche di supporto
+ */
+export async function getSupportStats() {
   const res = await fetch(`${base}/api/admin/support/stats`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch support stats');
   return res.json();
 }
 
-// Notifications API
-export async function getNotifications(): Promise<any[]> {
+/**
+ * Recupera le notifiche
+ */
+export async function getNotifications() {
   const res = await fetch(`${base}/api/admin/notifications`, {
-    headers: getAuthHeaders()
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to fetch notifications');
   return res.json();
 }
 
-export async function resolveNotification(id: string): Promise<void> {
-  const res = await fetch(`${base}/api/admin/notifications/resolve/${id}`, {
-    method: "POST",
-    headers: getAuthHeaders()
+/**
+ * Risolve una notifica
+ */
+export async function resolveNotification(id: number) {
+  const res = await fetch(`${base}/api/admin/notifications/${id}/resolve`, {
+    method: "PATCH",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
   });
-  if (!res.ok) throw new Error('Failed to resolve notification');
+  return res.json();
+}
+
+/**
+ * Recupera i dettagli di un item
+ */
+export async function getItemDetails(itemName: string) {
+  const res = await fetch(`${base}/api/admin/valuation/${itemName}`, {
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Approva un item
+ */
+export async function approveItem(itemName: string) {
+  const res = await fetch(`${base}/api/admin/valuation/${itemName}/approve`, {
+    method: "POST",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Rifiuta un item
+ */
+export async function rejectItem(itemName: string) {
+  const res = await fetch(`${base}/api/admin/valuation/${itemName}/reject`, {
+    method: "POST",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Recupera le impostazioni di sistema
+ */
+export async function getSystemSettings() {
+  const res = await fetch(`${base}/api/admin/settings`, {
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Recupera gli utenti
+ */
+export async function getUsers() {
+  const res = await fetch(`${base}/api/admin/users`, {
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Risponde a un ticket
+ */
+export async function respondToTicket(ticketId: number, response: string) {
+  const res = await fetch(`${base}/api/admin/support/tickets/${ticketId}/respond`, {
+    method: "POST",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ response }),
+  });
+  return res.json();
+}
+
+/**
+ * Chiude un ticket
+ */
+export async function closeTicket(ticketId: number) {
+  const res = await fetch(`${base}/api/admin/support/tickets/${ticketId}/close`, {
+    method: "PATCH",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+    },
+  });
+  return res.json();
+}
+
+/**
+ * Aggiorna lo stato di un utente
+ */
+export async function updateUserStatus(userId: string, status: string) {
+  const res = await fetch(`${base}/api/admin/users/${userId}/status`, {
+    method: "PATCH",
+    headers: {
+      "X-Admin-Token": localStorage.getItem("funkard_admin_token") || "",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+  return res.json();
 }
