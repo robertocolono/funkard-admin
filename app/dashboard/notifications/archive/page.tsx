@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Archive, Clock, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench, Info } from "lucide-react";
+import { Loader2, Archive, Clock, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench, Info, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Notification {
   id: number;
@@ -273,7 +274,7 @@ export default function ArchiveNotificationsPage() {
               <CardContent>
                 <p className="text-gray-700 mb-3">{notif.message}</p>
                 
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
                   <span className={`px-2 py-1 rounded ${
                     notif.priority === "HIGH" ? "bg-red-100 text-red-700" :
                     notif.priority === "MEDIUM" ? "bg-yellow-100 text-yellow-700" :
@@ -290,6 +291,36 @@ export default function ArchiveNotificationsPage() {
                     <Archive className="w-3 h-3" />
                     Archiviata: {new Date(notif.archived_at).toLocaleString("it-IT")}
                   </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      if (!confirm("Eliminare definitivamente questa notifica?")) return;
+
+                      try {
+                        const res = await fetch(
+                          `https://funkard-api.onrender.com/api/admin/notifications/delete/${notif.id}`,
+                          {
+                            method: "DELETE",
+                            headers: {
+                              Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                              "Content-Type": "application/json",
+                            },
+                          }
+                        );
+
+                        if (!res.ok) throw new Error("Errore durante eliminazione");
+                        setNotifications((prev) => prev.filter((n) => n.id !== notif.id)); // Rimuove subito dalla UI
+                      } catch (err) {
+                        console.error("❌ Errore:", err);
+                      }
+                    }}
+                  >
+                    🗑️ Elimina
+                  </Button>
                 </div>
               </CardContent>
             </Card>
