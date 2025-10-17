@@ -1,114 +1,122 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getSystemSettings } from "@/lib/api";
+import { useState } from "react";
+import { Wrench, RefreshCw, Database, Trash2, FileText, Loader2 } from "lucide-react";
+import { apiPost } from "@/lib/api";
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    // ✅ fetch reale pronto
-    /*
-    getSystemSettings()
-      .then(setSettings)
-      .catch(err => {
-        console.error("Errore nel caricamento settings:", err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-    */
+  const handleAction = async (action: string) => {
+    setLoading(action);
+    setMessage(null);
+    try {
+      let endpoint = "";
+      switch (action) {
+        case "cleanup":
+          endpoint = "/api/admin/maintenance/cleanup";
+          break;
+        case "refresh_market":
+          endpoint = "/api/admin/valuation/refreshIncremental";
+          break;
+        case "rebuild_cache":
+          endpoint = "/api/admin/maintenance/cache/rebuild";
+          break;
+        case "export_logs":
+          endpoint = "/api/admin/maintenance/logs/export";
+          break;
+        default:
+          return;
+      }
 
-    // Mock temporaneo per testing
-    setTimeout(() => {
-      setSettings({
-        mailEnabled: true,
-        adminEmail: "admin@funkard.com",
-        apiStatus: "online",
-        lastBackup: "2024-01-15T08:00:00Z",
-        version: "1.2.3"
-      });
-      setLoading(false);
-    }, 400);
-  }, []);
+      // ✅ API reale pronta, da attivare dopo fix CORS:
+      /*
+      const res = await apiPost(endpoint);
+      setMessage(`✅ Azione completata con successo: ${action}`);
+      */
+
+      // Mock temporaneo per testing UI
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setMessage(`✅ Azione completata con successo: ${action}`);
+    } catch (err) {
+      setMessage(`❌ Errore durante l'esecuzione: ${action}`);
+      console.error(err);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const actions = [
+    {
+      id: "cleanup",
+      label: "Pulizia DB & Notifiche Risolte",
+      description: "Rimuove notifiche risolte, ticket chiusi e cache vecchie oltre 30 giorni.",
+      icon: <Trash2 className="w-5 h-5 text-red-600" />,
+      color: "border-red-200 bg-red-50 hover:bg-red-100",
+    },
+    {
+      id: "refresh_market",
+      label: "Aggiorna Valutazioni Marketplace",
+      description: "Forza l'aggiornamento manuale dei valori di mercato.",
+      icon: <RefreshCw className="w-5 h-5 text-blue-600" />,
+      color: "border-blue-200 bg-blue-50 hover:bg-blue-100",
+    },
+    {
+      id: "rebuild_cache",
+      label: "Rigenera Cache Sistema",
+      description: "Ripulisce e ricostruisce la cache interna per sincronizzare i dati.",
+      icon: <Database className="w-5 h-5 text-yellow-600" />,
+      color: "border-yellow-200 bg-yellow-50 hover:bg-yellow-100",
+    },
+    {
+      id: "export_logs",
+      label: "Esporta Log Attività Staff",
+      description: "Scarica un file CSV con le ultime attività di amministrazione.",
+      icon: <FileText className="w-5 h-5 text-green-600" />,
+      color: "border-green-200 bg-green-50 hover:bg-green-100",
+    },
+  ];
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-6">Impostazioni Sistema</h2>
+      <header className="flex items-center gap-2 mb-6">
+        <Wrench className="w-5 h-5" />
+        <h2 className="text-xl font-semibold">Impostazioni & Manutenzione</h2>
+      </header>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Caricamento impostazioni...</p>
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          {/* Sistema Status */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Stato Sistema</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${settings?.apiStatus === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-gray-700">API Status: {settings?.apiStatus}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${settings?.mailEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-gray-700">Email: {settings?.mailEnabled ? 'Abilitata' : 'Disabilitata'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Configurazione */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Configurazione</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Admin Email</span>
-                <span className="text-gray-900 font-medium">{settings?.adminEmail}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Versione</span>
-                <span className="text-gray-900 font-medium">v{settings?.version}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-700">Ultimo Backup</span>
-                <span className="text-gray-900 font-medium">
-                  {settings?.lastBackup ? new Date(settings.lastBackup).toLocaleString('it-IT') : 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Azioni Sistema */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Azioni Sistema</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                Backup Manuale
-              </button>
-              <button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
-                Pulizia Cache
-              </button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                Pulizia Notifiche
-              </button>
-              <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-                Log Sistema
-              </button>
-            </div>
-          </div>
-
-          {/* Informazioni Ambiente */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Informazioni Ambiente</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p><strong>API URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'Non configurato'}</p>
-              <p><strong>Admin Token:</strong> {process.env.NEXT_PUBLIC_ADMIN_TOKEN ? 'Configurato' : 'Non configurato'}</p>
-              <p><strong>Ambiente:</strong> {process.env.NODE_ENV || 'development'}</p>
-            </div>
-          </div>
+      {message && (
+        <div
+          className={`p-3 rounded-md text-sm mb-5 ${
+            message.startsWith("✅")
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+          }`}
+        >
+          {message}
         </div>
       )}
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        {actions.map((action) => (
+          <button
+            key={action.id}
+            onClick={() => handleAction(action.id)}
+            disabled={loading !== null}
+            className={`flex flex-col items-start p-4 border rounded-xl transition text-left ${action.color}`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              {loading === action.id ? (
+                <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+              ) : (
+                action.icon
+              )}
+              <span className="font-semibold">{action.label}</span>
+            </div>
+            <p className="text-xs text-gray-600">{action.description}</p>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
