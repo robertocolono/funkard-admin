@@ -1,84 +1,240 @@
 "use client";
 
-import { useState } from "react";
-import { mockNotifications } from "@/lib/mockNotifications";
-import { AdminNotification } from "@/types/Notification";
-import { Bell, CheckCircle, XCircle, AlertTriangle, ShoppingBag, MessageSquare, Database, Wrench } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Loader2,
+  Bell,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  Archive,
+  EyeOff,
+  ShoppingBag,
+  MessageSquare,
+  Database,
+  Wrench,
+} from "lucide-react";
+
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: "ERROR" | "MARKET" | "SUPPORT" | "SYSTEM" | "GRADING";
+  priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+  read_status: boolean;
+  created_at: string;
+}
+
+// --- Fetch iniziale ---
+async function fetchAdminNotifications(token: string): Promise<Notification[]> {
+  const res = await fetch("https://funkard-api.onrender.com/api/admin/notifications", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Errore nel caricamento notifiche");
+  return res.json();
+}
+
+// --- Segna come letta ---
+async function markAsRead(token: string, id: number) {
+  const res = await fetch(`https://funkard-api.onrender.com/api/admin/notifications/${id}/read`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) throw new Error("Errore nel segnare come letta");
+}
+
+// --- Archivia notifica ---
+async function archiveNotification(token: string, id: number) {
+  const res = await fetch(`https://funkard-api.onrender.com/api/admin/notifications/${id}/archive`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) throw new Error("Errore nell'archiviazione");
+}
 
 export default function NotificationsPage() {
-  const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "resolved">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "error" | "market" | "support" | "grading" | "system">("all");
-  const [notifications, setNotifications] = useState<AdminNotification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
-  const filtered = notifications.filter(
-    (n) =>
-      (statusFilter === "all" || n.status === statusFilter) &&
-      (typeFilter === "all" || n.type === typeFilter)
-  );
+  const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN || "";
 
-  const markAsResolved = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === id
-          ? { ...n, status: "resolved", resolvedAt: new Date().toISOString() }
-          : n
-      )
+  // --- Caricamento iniziale ---
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchAdminNotifications(token);
+        setNotifications(data);
+      } catch (err) {
+        console.error("❌ Errore fetch notifiche:", err);
+        // Fallback a mock data se API non disponibile
+        setNotifications([
+          {
+            id: 1,
+            title: "Errore connessione DB",
+            message: "Tentativo fallito di connessione al database PostgreSQL. Riprovare più tardi.",
+            type: "ERROR",
+            priority: "HIGH",
+            read_status: false,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            title: "Nuova carta caricata",
+            message: "L'utente mario.rossi ha caricato una nuova carta Charizard PSA 10.",
+            type: "MARKET",
+            priority: "MEDIUM",
+            read_status: false,
+            created_at: new Date(Date.now() - 3600000).toISOString(),
+          },
+          {
+            id: 3,
+            title: "Ticket supporto aperto",
+            message: "Nuovo ticket di supporto da lucia.bianchi per problema con pagamento.",
+            type: "SUPPORT",
+            priority: "LOW",
+            read_status: true,
+            created_at: new Date(Date.now() - 7200000).toISOString(),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [token]);
+
+  // --- Stream SSE realtime ---
+  useEffect(() => {
+    const source = new EventSource(
+      "https://funkard-api.onrender.com/api/admin/notifications/stream",
+      { withCredentials: false }
     );
+
+    source.onmessage = (event) => {
+      try {
+        const newNotif: Notification = JSON.parse(event.data);
+        console.log("🔔 Nuova notifica in arrivo:", newNotif);
+        setNotifications((prev) => [newNotif, ...prev]);
+      } catch (err) {
+        console.error("Errore parsing notifica:", err);
+      }
+    };
+
+    source.onerror = (err) => {
+      console.error("❌ Errore SSE:", err);
+      source.close();
+    };
+
+    return () => source.close();
+  }, []);
+
+  // --- Filtri combinati ---
+  const filtered = notifications.filter((n) => {
+    const priorityMatch = filter === "ALL" || n.priority === filter;
+    const typeMatch = typeFilter === "ALL" || n.type === typeFilter;
+    return priorityMatch && typeMatch;
+  });
+
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await markAsRead(token, id);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === id ? { ...n, read_status: true } : n
+        )
+      );
+    } catch (err) {
+      console.error("Errore markAsRead:", err);
+    }
   };
 
-  const markAsArchived = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === id ? { ...n, status: "archived" } : n
-      )
-    );
+  const handleArchive = async (id: number) => {
+    try {
+      await archiveNotification(token, id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error("Errore archive:", err);
+    }
   };
 
   const getTypeIcon = (type: string) => {
-    const icons: Record<string, JSX.Element> = {
-      market: <ShoppingBag className="w-4 h-4" />,
-      support: <MessageSquare className="w-4 h-4" />,
-      error: <AlertTriangle className="w-4 h-4" />,
-      system: <Database className="w-4 h-4" />,
-      grading: <Wrench className="w-4 h-4" />,
-    };
-    return icons[type] || <Bell className="w-4 h-4" />;
+    switch (type) {
+      case "ERROR":
+        return <AlertTriangle className="text-red-500 w-5 h-5" />;
+      case "MARKET":
+        return <ShoppingBag className="text-yellow-400 w-5 h-5" />;
+      case "SUPPORT":
+        return <MessageSquare className="text-blue-500 w-5 h-5" />;
+      case "SYSTEM":
+        return <Database className="text-green-500 w-5 h-5" />;
+      case "GRADING":
+        return <Wrench className="text-purple-500 w-5 h-5" />;
+      default:
+        return <Info className="text-gray-500 w-5 h-5" />;
+    }
   };
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      market: "bg-blue-100 text-blue-700",
-      support: "bg-green-100 text-green-700",
-      error: "bg-red-100 text-red-700",
-      system: "bg-gray-100 text-gray-700",
-      grading: "bg-purple-100 text-purple-700",
-    };
-    return colors[type] || "bg-gray-100 text-gray-700";
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "HIGH":
+        return "border-red-500 bg-red-50";
+      case "MEDIUM":
+        return "border-yellow-400 bg-yellow-50";
+      case "LOW":
+        return "border-blue-400 bg-blue-50";
+      case "INFO":
+        return "border-gray-300 bg-gray-50";
+      default:
+        return "border-gray-300 bg-gray-50";
+    }
   };
+
+  // --- UI ---
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+      </div>
+    );
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Bell className="w-6 h-6" /> Notifiche Admin
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Bell className="w-6 h-6 text-yellow-500" /> Notifiche Admin
         </h1>
 
         {/* Filtri */}
         <div className="flex flex-wrap gap-2">
-          {/* Filtro per Stato */}
+          {/* Filtro per Priorità */}
           <div className="flex gap-1">
-            {["all", "unread", "resolved"].map((f) => (
+            {["ALL", "HIGH", "MEDIUM", "LOW", "INFO"].map((lvl) => (
               <button
-                key={f}
+                key={lvl}
                 className={`px-3 py-1 text-sm rounded-md transition ${
-                  statusFilter === f
+                  filter === lvl
                     ? "bg-black text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
-                onClick={() => setStatusFilter(f as any)}
+                onClick={() => setFilter(lvl)}
               >
-                {f === "all" ? "Tutte" : f === "unread" ? "Non lette" : "Risolte"}
+                {lvl}
               </button>
             ))}
           </div>
@@ -87,14 +243,14 @@ export default function NotificationsPage() {
           <select
             className="border border-gray-300 rounded-md text-sm px-3 py-1 bg-white"
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as any)}
+            onChange={(e) => setTypeFilter(e.target.value)}
           >
-            <option value="all">Tutti i tipi</option>
-            <option value="error">Errori</option>
-            <option value="market">Mercato</option>
-            <option value="support">Supporto</option>
-            <option value="grading">Grading</option>
-            <option value="system">Sistema</option>
+            <option value="ALL">Tutti i tipi</option>
+            <option value="ERROR">Errori</option>
+            <option value="MARKET">Mercato</option>
+            <option value="SUPPORT">Supporto</option>
+            <option value="SYSTEM">Sistema</option>
+            <option value="GRADING">Grading</option>
           </select>
         </div>
       </div>
@@ -109,7 +265,7 @@ export default function NotificationsPage() {
             <div>
               <p className="text-sm text-gray-600">Non lette</p>
               <p className="text-2xl font-bold text-red-600">
-                {notifications.filter(n => n.status === "unread").length}
+                {notifications.filter(n => !n.read_status).length}
               </p>
             </div>
           </div>
@@ -120,9 +276,9 @@ export default function NotificationsPage() {
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Risolte</p>
+              <p className="text-sm text-gray-600">Lette</p>
               <p className="text-2xl font-bold text-green-600">
-                {notifications.filter(n => n.status === "resolved").length}
+                {notifications.filter(n => n.read_status).length}
               </p>
             </div>
           </div>
@@ -135,7 +291,7 @@ export default function NotificationsPage() {
             <div>
               <p className="text-sm text-gray-600">Alta priorità</p>
               <p className="text-2xl font-bold text-orange-600">
-                {notifications.filter(n => n.importance === "high" && n.status === "unread").length}
+                {notifications.filter(n => n.priority === "HIGH" && !n.read_status).length}
               </p>
             </div>
           </div>
@@ -157,70 +313,75 @@ export default function NotificationsPage() {
 
       {/* Lista notifiche */}
       <div className="grid gap-4">
-        {filtered.map((n) => (
-          <div
-            key={n.id}
-            className={`border-l-4 rounded-xl border bg-white shadow-sm ${
-              n.importance === "high"
-                ? "border-red-500"
-                : n.importance === "medium"
-                ? "border-yellow-500"
-                : "border-green-500"
-            }`}
-          >
-            <div className="flex justify-between items-start p-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  {getTypeIcon(n.type)}
-                  <h3 className="font-semibold">{n.title}</h3>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(n.type)}`}>
-                    {n.type.toUpperCase()}
-                  </span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    n.importance === "high" ? "bg-red-100 text-red-700" :
-                    n.importance === "medium" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-green-100 text-green-700"
-                  }`}>
-                    {n.importance.toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">{n.message}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>Creato: {new Date(n.createdAt).toLocaleString("it-IT")}</span>
-                  {n.resolvedAt && (
-                    <span>Risolto: {new Date(n.resolvedAt).toLocaleString("it-IT")}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2 ml-4">
-                {n.status === "unread" && (
-                  <button
-                    onClick={() => markAsResolved(n.id)}
-                    className="px-3 py-1 bg-green-100 text-green-700 rounded-md text-xs hover:bg-green-200 transition flex items-center gap-1"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Risolvi
-                  </button>
-                )}
-                <button
-                  onClick={() => markAsArchived(n.id)}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs hover:bg-gray-200 transition flex items-center gap-1"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Archivia
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
+        {filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">
               Nessuna notifica trovata con i filtri selezionati.
             </p>
           </div>
+        ) : (
+          filtered.map((notif) => (
+            <Card
+              key={notif.id}
+              className={`border-l-4 transition-all hover:shadow-md ${
+                getPriorityColor(notif.priority)
+              } ${notif.read_status ? "opacity-60" : ""}`}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  {getTypeIcon(notif.type)}
+                  {notif.title}
+                  {!notif.read_status && (
+                    <Badge variant="destructive" className="ml-auto">
+                      Nuova
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent>
+                <p className="text-gray-700 mb-3">{notif.message}</p>
+                
+                <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+                  <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                    {notif.type}
+                  </span>
+                  <span className={`px-2 py-1 rounded ${
+                    notif.priority === "HIGH" ? "bg-red-100 text-red-700" :
+                    notif.priority === "MEDIUM" ? "bg-yellow-100 text-yellow-700" :
+                    notif.priority === "LOW" ? "bg-blue-100 text-blue-700" :
+                    "bg-gray-100 text-gray-700"
+                  }`}>
+                    {notif.priority}
+                  </span>
+                  <span>
+                    {new Date(notif.created_at).toLocaleString("it-IT")}
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  {!notif.read_status && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleMarkAsRead(notif.id)}
+                    >
+                      <EyeOff className="w-4 h-4 mr-1" /> Segna come letta
+                    </Button>
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleArchive(notif.id)}
+                  >
+                    <Archive className="w-4 h-4 mr-1" /> Archivia
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>

@@ -11,6 +11,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { toastNotifications, removeToast } = useNotifications();
 
+  // Stream SSE globale per notifiche real-time
+  useEffect(() => {
+    const source = new EventSource("https://funkard-api.onrender.com/api/admin/notifications/stream", {
+      withCredentials: false,
+    });
+
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("🔔 Notifica in arrivo:", data);
+        // Qui puoi aggiornare lo stato globale o mostrare un toast
+        // Per ora logghiamo solo, ma potresti integrare con un context globale
+      } catch (err) {
+        console.error("Errore parsing notifica SSE:", err);
+      }
+    };
+
+    source.onerror = (err) => {
+      console.error("❌ Errore SSE:", err);
+      source.close();
+    };
+
+    return () => source.close();
+  }, []);
+
   // Temporaneamente rimosso controllo autenticazione per testing
 
   return (
