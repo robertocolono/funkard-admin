@@ -15,6 +15,7 @@ export default function Navbar() {
       <a href="/notifications" className="hover:text-yellow-400">Notifiche</a>
       <a href="/cleanup" className="hover:text-yellow-400">Cleanup</a>
       <a href="/test-backend" className="hover:text-yellow-400">Test Backend</a>
+      <a href="/notifications-panel" className="hover:text-yellow-400">Panel Notifiche</a>
       <a href="/settings" className="hover:text-yellow-400 ml-auto">Impostazioni</a>
       
       {/* Notifiche Admin */}
