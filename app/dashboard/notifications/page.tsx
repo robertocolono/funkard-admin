@@ -16,7 +16,9 @@ import {
   MessageSquare,
   Database,
   Wrench,
+  History,
 } from "lucide-react";
+import Link from "next/link";
 
 interface Notification {
   id: number;
@@ -216,9 +218,18 @@ export default function NotificationsPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Bell className="w-6 h-6 text-yellow-500" /> Notifiche Admin
-        </h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            <Bell className="w-6 h-6 text-yellow-500" /> Notifiche Admin
+          </h1>
+          <Link
+            href="/dashboard/notifications/archive"
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
+          >
+            <History className="w-4 h-4" />
+            Archivio
+          </Link>
+        </div>
 
         {/* Filtri */}
         <div className="flex flex-wrap gap-2">
