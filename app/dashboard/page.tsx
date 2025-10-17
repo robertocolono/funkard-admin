@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { getStats } from "@/lib/api";
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // ✅ qui metteremo il fetch reale più avanti:
-    // fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`, { headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}` } })
-    //   .then(res => res.json())
-    //   .then(setData)
-    //   .finally(() => setLoading(false));
+    // ✅ Fetch reale pronto, da attivare dopo fix backend:
+    /*
+    getStats()
+      .then(setData)
+      .catch(err => {
+        console.error("Errore nel caricamento stats:", err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+    */
 
     // Mock temporaneo per testing
     setTimeout(() => {

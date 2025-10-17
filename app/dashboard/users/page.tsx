@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getUsers } from "@/lib/api";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // ✅ fetch reale pronto
-    // fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/users`)
-    //   .then(res => res.json())
-    //   .then(setUsers)
-    //   .finally(() => setLoading(false));
+    /*
+    getUsers()
+      .then(setUsers)
+      .catch(err => {
+        console.error("Errore nel caricamento utenti:", err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+    */
 
     // Mock temporaneo per testing
     setTimeout(() => {

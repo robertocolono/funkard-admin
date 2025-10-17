@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getSystemSettings } from "@/lib/api";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // ✅ fetch reale pronto
-    // fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/settings`)
-    //   .then(res => res.json())
-    //   .then(setSettings)
-    //   .finally(() => setLoading(false));
+    /*
+    getSystemSettings()
+      .then(setSettings)
+      .catch(err => {
+        console.error("Errore nel caricamento settings:", err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+    */
 
     // Mock temporaneo per testing
     setTimeout(() => {

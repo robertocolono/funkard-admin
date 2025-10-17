@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getMarketItems } from "@/lib/api";
 
 interface MarketItem {
   id: string;
@@ -20,17 +21,12 @@ export default function MarketPage() {
   useEffect(() => {
     // ✅ Fetch reale pronto, da attivare dopo fix backend:
     /*
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/market`, {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`Errore ${res.status}`);
-        return res.json();
-      })
+    getMarketItems()
       .then(setItems)
-      .catch(err => setError(err.message))
+      .catch(err => {
+        console.error("Errore nel caricamento market:", err);
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
     */
 

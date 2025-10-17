@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getNotifications } from "@/lib/api";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // ✅ fetch reale pronto
-    // fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/notifications`)
-    //   .then(res => res.json())
-    //   .then(setNotifications)
-    //   .finally(() => setLoading(false));
+    /*
+    getNotifications()
+      .then(setNotifications)
+      .catch(err => {
+        console.error("Errore nel caricamento notifiche:", err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+    */
 
     // Mock temporaneo per testing
     setTimeout(() => {

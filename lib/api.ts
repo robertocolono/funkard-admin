@@ -1,365 +1,293 @@
-// TEMPORANEAMENTE DISABILITATO - Mock per evitare problemi CORS
-const base = process.env.NEXT_PUBLIC_API_URL!;
+// lib/api.ts
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
+
+/**
+ * API client generico per Funkard Admin.
+ * Gestisce tutte le chiamate e include automaticamente i token.
+ */
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_API_URL non definito nelle env");
+  if (!ADMIN_TOKEN) console.warn("⚠️ NEXT_PUBLIC_ADMIN_TOKEN non impostato (solo per test locali)");
+
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ADMIN_TOKEN}`,
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`❌ Errore API ${res.status}: ${text}`);
+    throw new Error(`API error ${res.status}`);
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    return {} as T;
+  }
+}
+
+/**
+ * Wrapper comodo per GET (usato dalle varie sezioni)
+ */
+export function apiGet<T>(endpoint: string) {
+  return apiRequest<T>(endpoint, { method: "GET" });
+}
+
+/**
+ * Wrapper per POST
+ */
+export function apiPost<T>(endpoint: string, body?: any) {
+  return apiRequest<T>(endpoint, {
+    method: "POST",
+    body: JSON.stringify(body || {}),
+  });
+}
+
+/**
+ * Wrapper per PATCH
+ */
+export function apiPatch<T>(endpoint: string, body?: any) {
+  return apiRequest<T>(endpoint, {
+    method: "PATCH",
+    body: JSON.stringify(body || {}),
+  });
+}
+
+/**
+ * Wrapper per DELETE
+ */
+export function apiDelete<T>(endpoint: string) {
+  return apiRequest<T>(endpoint, { method: "DELETE" });
+}
+
+/**
+ * Wrapper per PUT
+ */
+export function apiPut<T>(endpoint: string, body?: any) {
+  return apiRequest<T>(endpoint, {
+    method: "PUT",
+    body: JSON.stringify(body || {}),
+  });
+}
 
 /**
  * Ping dell'API backend per verificare la connessione
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
  */
 export async function pingAPI() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Mock response
-  return {
-    status: "connected",
-    message: "Mock API - Connessione simulata",
-    timestamp: new Date().toISOString()
-  };
+  return apiGet<{
+    status: string;
+    message: string;
+    timestamp: string;
+  }>("/api/admin/ping");
 }
 
 /**
- * Recupera le statistiche generali
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
+ * Recupera statistiche generali del dashboard
  */
 export async function getStats() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Mock stats
-  return {
-    users: 124,
-    cards: 512,
-    pending: 8,
-    tickets: 3,
-    revenue: 15420,
-    growth: {
-      users: 12,
-      cards: 45,
-      revenue: 8.5
-    }
-  };
+  return apiGet<{
+    users: number;
+    products: number;
+    sales: number;
+    tickets: number;
+  }>("/api/admin/stats");
 }
 
 /**
- * Recupera i dati del mercato
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getPendingMarket() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 600));
-  
-  // Mock pending market data
-  return [
-    {
-      id: "1",
-      name: "Charizard Base Set",
-      category: "Pokemon",
-      currentPrice: 450,
-      historicalData: [420, 430, 440, 450],
-      daysSinceLastUpdate: 2,
-      status: "pending" as "pending" | "approved" | "rejected"
-    },
-    {
-      id: "2", 
-      name: "Black Lotus",
-      category: "Magic",
-      currentPrice: 25000,
-      historicalData: [24000, 24500, 24800, 25000],
-      daysSinceLastUpdate: 1,
-      status: "pending" as "pending" | "approved" | "rejected"
-    },
-    {
-      id: "3",
-      name: "Blue-Eyes White Dragon",
-      category: "Yu-Gi-Oh",
-      currentPrice: 120,
-      historicalData: [110, 115, 118, 120],
-      daysSinceLastUpdate: 3,
-      status: "pending" as "pending" | "approved" | "rejected"
-    }
-  ];
-}
-
-/**
- * Recupera i ticket di supporto
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getSupportTickets() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 700));
-  
-  // Mock support tickets
-  return [
-    {
-      id: "1",
-      user: "mario.rossi@email.com",
-      subject: "Problema con pagamento",
-      message: "Non riesco a completare l'acquisto della carta Charizard",
-      status: "open" as "open" | "in_progress" | "closed",
-      priority: "high" as "low" | "medium" | "high",
-      createdAt: "2024-01-15T10:30:00Z",
-      lastUpdate: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: "2",
-      user: "lucia.bianchi@email.com", 
-      subject: "Richiesta rimborso",
-      message: "Vorrei richiedere un rimborso per un acquisto duplicato",
-      status: "in_progress" as "open" | "in_progress" | "closed",
-      priority: "medium" as "low" | "medium" | "high",
-      createdAt: "2024-01-14T15:45:00Z",
-      lastUpdate: "2024-01-15T09:20:00Z",
-      adminResponse: "Stiamo verificando la transazione"
-    },
-    {
-      id: "3",
-      user: "giovanni.verdi@email.com",
-      subject: "Domanda su spedizione",
-      message: "Quando arriverà il mio ordine?",
-      status: "closed" as "open" | "in_progress" | "closed",
-      priority: "low" as "low" | "medium" | "high",
-      createdAt: "2024-01-13T12:00:00Z",
-      lastUpdate: "2024-01-14T16:30:00Z",
-      adminResponse: "Il tuo ordine è stato spedito e arriverà entro 2-3 giorni lavorativi"
-    }
-  ];
-}
-
-/**
- * Recupera l'overview del mercato
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getMarketOverview() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 900));
-  
-  // Mock market overview data
-  return [
-    { day: "Lun", newProducts: 12, pendingItems: 3 },
-    { day: "Mar", newProducts: 8, pendingItems: 5 },
-    { day: "Mer", newProducts: 15, pendingItems: 2 },
-    { day: "Gio", newProducts: 10, pendingItems: 4 },
-    { day: "Ven", newProducts: 18, pendingItems: 1 },
-    { day: "Sab", newProducts: 6, pendingItems: 3 },
-    { day: "Dom", newProducts: 4, pendingItems: 2 }
-  ];
-}
-
-/**
- * Recupera le statistiche di supporto
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getSupportStats() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 650));
-  
-  // Mock support stats data
-  return [
-    { day: "Lun", opened: 5, closed: 3 },
-    { day: "Mar", opened: 3, closed: 4 },
-    { day: "Mer", opened: 7, closed: 2 },
-    { day: "Gio", opened: 4, closed: 6 },
-    { day: "Ven", opened: 6, closed: 3 },
-    { day: "Sab", opened: 2, closed: 1 },
-    { day: "Dom", opened: 1, closed: 2 }
-  ];
-}
-
-/**
- * Recupera le notifiche
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getNotifications() {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Mock notifications
-  return [
-    {
-      id: 1,
-      title: "Nuovo prodotto senza storico",
-      message: "Charizard Base Set aggiunto senza dati storici",
-      type: "MARKET",
-      severity: "WARN",
-      resolved: false,
-      createdAt: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: 2,
-      title: "Errore di grading",
-      message: "Problema con il sistema di valutazione automatica",
-      type: "GRADING", 
-      severity: "ERROR",
-      resolved: false,
-      createdAt: "2024-01-15T09:15:00Z"
-    },
-    {
-      id: 3,
-      title: "Ticket supporto urgente",
-      message: "Nuovo ticket con priorità alta da mario.rossi@email.com",
-      type: "SUPPORT",
-      severity: "INFO",
-      resolved: false,
-      createdAt: "2024-01-15T08:45:00Z"
-    }
-  ];
-}
-
-/**
- * Risolve una notifica
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function resolveNotification(id: number) {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  // Mock response
-  return {
-    success: true,
-    message: `Notifica ${id} risolta con successo (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
-}
-
-/**
- * Recupera i dettagli di un item
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getItemDetails(itemName: string) {
-  // Simula un delay di rete
-  await new Promise(resolve => setTimeout(resolve, 400));
-  
-  // Mock item details
-  return {
-    id: itemName,
-    name: itemName,
-    category: "Pokemon",
-    currentPrice: 450,
-    suggestedPrice: 480,
-    historicalData: [420, 430, 440, 450, 460, 470, 480],
-    daysSinceLastUpdate: 2,
-    status: "pending" as "pending" | "approved" | "rejected",
-    trend: "up",
-    confidence: 0.85
-  };
-}
-
-/**
- * Approva un item
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function approveItem(itemName: string) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return {
-    success: true,
-    message: `Item ${itemName} approvato con successo (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
-}
-
-/**
- * Rifiuta un item
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function rejectItem(itemName: string) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return {
-    success: true,
-    message: `Item ${itemName} rifiutato con successo (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
-}
-
-/**
- * Recupera le impostazioni di sistema
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
- */
-export async function getSystemSettings() {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  return {
-    mailEnabled: true,
-    adminEmail: "admin@funkard.com",
-    apiStatus: "online" as "online" | "offline",
-    lastBackup: "2024-01-15T08:00:00Z",
-    version: "1.2.3"
-  };
-}
-
-/**
- * Recupera gli utenti
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
+ * Recupera lista utenti
  */
 export async function getUsers() {
-  await new Promise(resolve => setTimeout(resolve, 600));
-  return [
-    {
-      id: "1",
-      email: "mario.rossi@email.com",
-      name: "Mario Rossi",
-      type: "private" as "private" | "business",
-      createdAt: "2024-01-10T10:00:00Z",
-      lastLogin: "2024-01-15T09:30:00Z",
-      totalCards: 25,
-      totalSpent: 1250
-    },
-    {
-      id: "2",
-      email: "lucia.bianchi@email.com",
-      name: "Lucia Bianchi",
-      type: "business" as "private" | "business",
-      createdAt: "2024-01-08T14:20:00Z",
-      lastLogin: "2024-01-15T08:45:00Z",
-      totalCards: 150,
-      totalSpent: 8750
-    },
-    {
-      id: "3",
-      email: "giovanni.verdi@email.com",
-      name: "Giovanni Verdi",
-      type: "private" as "private" | "business",
-      createdAt: "2024-01-12T16:30:00Z",
-      lastLogin: "2024-01-14T20:15:00Z",
-      totalCards: 8,
-      totalSpent: 320
-    }
-  ];
+  return apiGet<Array<{
+    id: string;
+    email: string;
+    name: string;
+    type: "private" | "business";
+    totalCards: number;
+    totalSpent: number;
+    createdAt: string;
+    lastLogin: string;
+  }>>("/api/admin/users");
 }
 
 /**
- * Risponde a un ticket
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
+ * Recupera lista carte market
  */
-export async function respondToTicket(ticketId: number, response: string) {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  return {
-    success: true,
-    message: `Risposta inviata al ticket ${ticketId} (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
+export async function getMarketItems() {
+  return apiGet<Array<{
+    id: string;
+    name: string;
+    category: string;
+    seller: string;
+    price: number;
+    status: "active" | "sold" | "pending";
+    createdAt: string;
+  }>>("/api/admin/market");
 }
 
 /**
- * Chiude un ticket
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
+ * Recupera dettaglio carta singola
  */
-export async function closeTicket(ticketId: number) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return {
-    success: true,
-    message: `Ticket ${ticketId} chiuso con successo (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
+export async function getMarketItem(id: string) {
+  return apiGet<{
+    id: string;
+    name: string;
+    category: string;
+    seller: string;
+    price: number;
+    status: "active" | "sold" | "pending";
+    createdAt: string;
+    description: string;
+    condition: "mint" | "near_mint" | "excellent" | "good" | "fair" | "poor";
+    images: string[];
+    history: Array<{
+      date: string;
+      action: string;
+      user: string;
+    }>;
+  }>(`/api/admin/market/${id}`);
 }
 
 /**
- * Aggiorna lo stato di un utente
- * MOCK TEMPORANEO - Disabilitato per evitare CORS
+ * Recupera ticket supporto
  */
-export async function updateUserStatus(userId: string, status: string) {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  return {
-    success: true,
-    message: `Stato utente ${userId} aggiornato a ${status} (MOCK)`,
-    timestamp: new Date().toISOString()
-  };
+export async function getSupportTickets() {
+  return apiGet<Array<{
+    id: string;
+    user: string;
+    subject: string;
+    message: string;
+    status: "open" | "in_progress" | "closed";
+    priority: "low" | "medium" | "high";
+    createdAt: string;
+    lastUpdate: string;
+    adminResponse?: string;
+  }>>("/api/admin/support/tickets");
+}
+
+/**
+ * Recupera notifiche admin
+ */
+export async function getNotifications() {
+  return apiGet<Array<{
+    id: number;
+    title: string;
+    message: string;
+    type: "MARKET" | "GRADING" | "SUPPORT" | "SYSTEM" | "USER" | "INFO";
+    severity: "INFO" | "WARN" | "ERROR" | "CRITICAL";
+    resolved: boolean;
+    createdAt: string;
+  }>>("/api/admin/notifications");
+}
+
+/**
+ * Segna notifica come risolta
+ */
+export async function resolveNotification(id: number) {
+  return apiPatch(`/api/admin/notifications/${id}/resolve`);
+}
+
+/**
+ * Recupera impostazioni sistema
+ */
+export async function getSystemSettings() {
+  return apiGet<{
+    mailEnabled: boolean;
+    adminEmail: string;
+    apiStatus: "online" | "offline";
+    lastBackup: string;
+    version: string;
+  }>("/api/admin/settings");
+}
+
+/**
+ * Azioni admin per carte market
+ */
+export async function approveMarketItem(id: string) {
+  return apiPatch(`/api/admin/market/${id}/approve`);
+}
+
+export async function rejectMarketItem(id: string, reason?: string) {
+  return apiPatch(`/api/admin/market/${id}/reject`, { reason });
+}
+
+export async function deactivateMarketItem(id: string) {
+  return apiPatch(`/api/admin/market/${id}/deactivate`);
+}
+
+/**
+ * Azioni admin per ticket supporto
+ */
+export async function respondToTicket(id: string, response: string) {
+  return apiPost(`/api/admin/support/tickets/${id}/respond`, { response });
+}
+
+export async function closeTicket(id: string) {
+  return apiPatch(`/api/admin/support/tickets/${id}/close`);
+}
+
+/**
+ * Azioni admin per utenti
+ */
+export async function updateUserStatus(id: string, status: "active" | "suspended" | "banned") {
+  return apiPatch(`/api/admin/users/${id}/status`, { status });
+}
+
+/**
+ * Azioni sistema
+ */
+export async function triggerBackup() {
+  return apiPost("/api/admin/system/backup");
+}
+
+export async function clearCache() {
+  return apiPost("/api/admin/system/clear-cache");
+}
+
+export async function cleanupNotifications() {
+  return apiPost("/api/admin/system/cleanup-notifications");
+}
+
+/**
+ * Funzioni legacy per compatibilità
+ */
+export async function getPendingMarket() {
+  return apiGet<Array<{
+    id: string;
+    name: string;
+    category: string;
+    currentPrice: number;
+    historicalData: number[];
+    daysSinceLastUpdate: number;
+    status: "pending";
+  }>>("/api/admin/valuation/pending");
+}
+
+export async function getItemDetails(itemName: string) {
+  return apiGet<{
+    id: string;
+    name: string;
+    category: string;
+    currentPrice: number;
+    historicalData: number[];
+    daysSinceLastUpdate: number;
+    status: "pending" | "approved" | "rejected";
+  }>(`/api/admin/valuation/${itemName}`);
+}
+
+export async function approveItem(itemName: string) {
+  return apiPatch(`/api/admin/valuation/${itemName}/approve`);
+}
+
+export async function rejectItem(itemName: string) {
+  return apiPatch(`/api/admin/valuation/${itemName}/reject`);
 }

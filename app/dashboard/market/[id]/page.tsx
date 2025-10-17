@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getMarketItem } from "@/lib/api";
 
 interface MarketItemDetail {
   id: string;
@@ -30,17 +31,12 @@ export default function MarketItemDetailPage() {
   useEffect(() => {
     // ✅ Fetch reale pronto, da attivare dopo fix backend:
     /*
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/market/${params.id}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`Errore ${res.status}`);
-        return res.json();
-      })
+    getMarketItem(params.id as string)
       .then(setItem)
-      .catch(err => setError(err.message))
+      .catch(err => {
+        console.error("Errore nel caricamento dettaglio carta:", err);
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
     */
 
