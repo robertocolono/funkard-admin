@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Funkard Theme - Dark Palette */
+:root {
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+  --primary: #FFB800;
+  --secondary: #FF6A00;
+  --accent: #FFB800;
+  --muted: #1E1E1E;
+  --destructive: #FF3B30;
+  
+  /* ShadCN UI Variables */
+  --border: #2A2A2A;
+  --input: #2A2A2A;
+  --ring: #FFB800;
+  --radius: 0.5rem;
+}
+
+/* Dark theme overrides */
+.dark {
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+  --card: #1E1E1E;
+  --card-foreground: #FFFFFF;
+  --popover: #1E1E1E;
+  --popover-foreground: #FFFFFF;
+  --primary: #FFB800;
+  --primary-foreground: #0D0D0D;
+  --secondary: #FF6A00;
+  --secondary-foreground: #FFFFFF;
+  --muted: #1E1E1E;
+  --muted-foreground: #A0A0A0;
+  --accent: #FFB800;
+  --accent-foreground: #0D0D0D;
+  --destructive: #FF3B30;
+  --destructive-foreground: #FFFFFF;
+  --border: #2A2A2A;
+  --input: #2A2A2A;
+  --ring: #FFB800;
+}
+
+/* Base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Funkard specific styles */
+.funkard-gradient {
+  background: linear-gradient(135deg, #FFB800 0%, #FF6A00 100%);
+}
+
+.funkard-glow {
+  box-shadow: 0 0 20px rgba(255, 184, 0, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--accent));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Animation utilities */
+@keyframes funkard-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.funkard-pulse {
+  animation: funkard-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Priority colors */
+.priority-urgent {
+  @apply bg-red-500 text-white;
+}
+
+.priority-high {
+  @apply bg-orange-500 text-white;
+}
+
+.priority-normal {
+  @apply bg-blue-500 text-white;
+}
+
+.priority-low {
+  @apply bg-gray-500 text-white;
+}
+
+/* Status colors */
+.status-online {
+  @apply bg-green-500 text-white;
+}
+
+.status-offline {
+  @apply bg-red-500 text-white;
+}
+
+.status-warning {
+  @apply bg-yellow-500 text-black;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+}
+
+/* Button variants */
+.btn-funkard {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+}
+
+.btn-funkard-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors;
+}
+
+/* Input focus */
+.input-focus {
+  @apply focus:ring-2 focus:ring-accent focus:border-accent;
+}
+
+/* Badge variants */
+.badge-funkard {
+  @apply bg-accent text-accent-foreground;
+}
+
+.badge-funkard-secondary {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+/* Loading states */
+.loading-skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+/* Text utilities */
+.text-funkard {
+  @apply text-primary;
+}
+
+.text-funkard-secondary {
+  @apply text-secondary;
+}
+
+/* Border utilities */
+.border-funkard {
+  @apply border-primary;
+}
+
+.border-funkard-secondary {
+  @apply border-secondary;
+}
+
+/* Background utilities */
+.bg-funkard {
+  @apply bg-primary;
+}
+
+.bg-funkard-secondary {
+  @apply bg-secondary;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+}
+
+/* Glass effect */
+.glass {
+  @apply bg-background/80 backdrop-blur-sm border border-border/50;
+}
+
+/* Custom focus styles */
+.focus-funkard {
+  @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background;
+}
+
+/* Notification styles */
+.notification-card {
+  @apply bg-card border border-border rounded-lg p-4 transition-all duration-200 hover:shadow-md;
+}
+
+.notification-card.unread {
+  @apply border-primary/20 shadow-sm;
+}
+
+.notification-card.read {
+  @apply bg-muted/30 border-muted;
+}
+
+/* Dashboard grid */
+.dashboard-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    @apply grid-cols-1;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
