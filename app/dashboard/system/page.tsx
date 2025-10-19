@@ -12,18 +12,41 @@ export default function SystemPage() {
 
   useEffect(() => {
     getCleanupLogs()
-      .then((data) => setLogs(data.reverse())) // Mostra in ordine cronologico
+      .then((data) => setLogs(data.reverse())) // ordine cronologico
       .catch((err) => console.error("Errore logs:", err))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="p-6">Caricamento...</div>;
 
+  const lastLog = logs[logs.length - 1];
+  const lastResult = lastLog?.result === "success" ? "✅ Tutto OK" : "⚠️ Errore";
+  const lastDeleted = lastLog?.deleted ?? 0;
+  const lastDate = lastLog ? new Date(lastLog.timestamp).toLocaleString() : "N/D";
+
   return (
     <div className="p-6 space-y-8">
-      <h1 className="text-2xl font-semibold mb-2">🧹 Log Sistema</h1>
+      <h1 className="text-2xl font-semibold mb-4">🧹 Sistema & Cleanup</h1>
 
-      {/* 📊 Tabella log */}
+      {/* --- 🧭 Dashboard Stato --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Ultimo cleanup</p>
+          <p className="text-lg font-medium mt-1">{lastDate}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Record eliminati</p>
+          <p className="text-lg font-medium mt-1 text-green-400">{lastDeleted}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Stato sistema</p>
+          <p className={`text-lg font-medium mt-1 ${lastLog?.result === "success" ? "text-green-400" : "text-red-400"}`}>
+            {lastResult}
+          </p>
+        </div>
+      </div>
+
+      {/* --- 📊 Tabella log --- */}
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-800 bg-black text-gray-200 rounded-lg">
           <thead>
@@ -55,15 +78,17 @@ export default function SystemPage() {
         </table>
       </div>
 
-      {/* 📈 Grafico andamento cleanup */}
+      {/* --- 📈 Grafico --- */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
         <h2 className="text-lg font-medium mb-4">Andamento Pulizie Ultimi Giorni</h2>
         <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={logs.map((l) => ({
-            name: new Date(l.timestamp).toLocaleDateString(),
-            deleted: l.deleted,
-            color: l.result === "success" ? "#22c55e" : "#ef4444",
-          }))}>
+          <LineChart
+            data={logs.map((l) => ({
+              name: new Date(l.timestamp).toLocaleDateString(),
+              deleted: l.deleted,
+              color: l.result === "success" ? "#22c55e" : "#ef4444",
+            }))}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="name" stroke="#999" />
             <YAxis stroke="#999" />
