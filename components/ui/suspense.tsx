@@ -1,0 +1,392 @@
+"use client"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { 
+  Loader2, 
+  Clock, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle,
+  RefreshCw,
+  Pause,
+  Play,
+  Square,
+  RotateCcw
+} from "lucide-react"
+
+interface SuspenseState {
+  status: "idle" | "loading" | "success" | "error" | "timeout"
+  progress: number
+  message: string
+  timeout: number
+  retryCount: number
+  maxRetries: number
+}
+
+interface SuspenseProps {
+  state: SuspenseState
+  onRetry: () => void
+  onCancel: () => void
+  onReset: () => void
+  className?: string
+}
+
+export function Suspense({
+  state,
+  onRetry,
+  onCancel,
+  onReset,
+  className
+}: SuspenseProps) {
+  const [isVisible, setIsVisible] = React.useState(true)
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "idle": return "outline"
+      case "loading": return "default"
+      case "success": return "success"
+      case "error": return "destructive"
+      case "timeout": return "warning"
+      default: return "outline"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "idle": return <Clock className="h-4 w-4 text-gray-500" />
+      case "loading": return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+      case "success": return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "error": return <XCircle className="h-4 w-4 text-red-500" />
+      case "timeout": return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+      default: return <Clock className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case "idle": return "In attesa..."
+      case "loading": return "Caricamento in corso..."
+      case "success": return "Operazione completata"
+      case "error": return "Errore durante l'operazione"
+      case "timeout": return "Timeout raggiunto"
+      default: return "Stato sconosciuto"
+    }
+  }
+
+  const handleRetry = () => {
+    onRetry()
+  }
+
+  const handleCancel = () => {
+    onCancel()
+  }
+
+  const handleReset = () => {
+    onReset()
+  }
+
+  if (!isVisible) return null
+
+  return (
+    <div className={cn("space-y-6", className)}>
+      {/* Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            {getStatusIcon(state.status)}
+            <span>Stato Suspense</span>
+          </CardTitle>
+          <CardDescription>
+            {getStatusMessage(state.status)}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Badge variant={getStatusColor(state.status)}>
+                {state.status}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                Tentativo {state.retryCount} di {state.maxRetries}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsVisible(false)}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {state.status === "loading" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Progresso</span>
+                <span className="text-sm text-muted-foreground">
+                  {state.progress}%
+                </span>
+              </div>
+              <Progress value={state.progress} className="h-2" />
+            </div>
+          )}
+
+          {state.message && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">{state.message}</p>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            {state.status === "loading" && (
+              <Button onClick={handleCancel} variant="outline">
+                <Pause className="h-4 w-4 mr-2" />
+                Pausa
+              </Button>
+            )}
+            {state.status === "error" && (
+              <Button onClick={handleRetry} disabled={state.retryCount >= state.maxRetries}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Riprova
+              </Button>
+            )}
+            {state.status === "timeout" && (
+              <Button onClick={handleRetry} disabled={state.retryCount >= state.maxRetries}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Riprova
+              </Button>
+            )}
+            <Button onClick={handleReset} variant="outline">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Progress Details */}
+      {state.status === "loading" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Dettagli Progresso</span>
+            </CardTitle>
+            <CardDescription>
+              Informazioni dettagliate sul caricamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Progresso</span>
+                  <span className="text-sm font-bold">{state.progress}%</span>
+                </div>
+                <Progress value={state.progress} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Timeout</span>
+                  <span className="text-sm font-bold">{state.timeout}s</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Tempo massimo di attesa
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Tentativi</span>
+                  <span className="text-sm font-bold">
+                    {state.retryCount}/{state.maxRetries}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Tentativi rimanenti
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error Details */}
+      {state.status === "error" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              <span>Dettagli Errore</span>
+            </CardTitle>
+            <CardDescription>
+              Informazioni sull'errore verificatosi
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                {state.message}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Tentativi</span>
+                  <span className="text-sm font-bold">
+                    {state.retryCount}/{state.maxRetries}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Tentativi effettuati
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Timeout</span>
+                  <span className="text-sm font-bold">{state.timeout}s</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Timeout configurato
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Success Details */}
+      {state.status === "success" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span>Operazione Completata</span>
+            </CardTitle>
+            <CardDescription>
+              L'operazione è stata completata con successo
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                {state.message}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Tentativi</span>
+                  <span className="text-sm font-bold">{state.retryCount}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Tentativi necessari
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Timeout</span>
+                  <span className="text-sm font-bold">{state.timeout}s</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Timeout configurato
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// Componente per loading spinner personalizzato
+interface LoadingSpinnerProps {
+  size?: "sm" | "md" | "lg"
+  message?: string
+  className?: string
+}
+
+export function LoadingSpinner({
+  size = "md",
+  message = "Caricamento...",
+  className
+}: LoadingSpinnerProps) {
+  const getSizeClasses = () => {
+    switch (size) {
+      case "sm": return "h-4 w-4"
+      case "md": return "h-6 w-6"
+      case "lg": return "h-8 w-8"
+      default: return "h-6 w-6"
+    }
+  }
+
+  return (
+    <div className={cn("flex items-center justify-center space-x-2", className)}>
+      <Loader2 className={cn("animate-spin", getSizeClasses())} />
+      {message && (
+        <span className="text-sm text-muted-foreground">{message}</span>
+      )}
+    </div>
+  )
+}
+
+// Componente per error boundary
+interface ErrorBoundaryProps {
+  children: React.ReactNode
+  fallback?: React.ReactNode
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
+}
+
+export function ErrorBoundary({
+  children,
+  fallback,
+  onError
+}: ErrorBoundaryProps) {
+  const [hasError, setHasError] = React.useState(false)
+  const [error, setError] = React.useState<Error | null>(null)
+
+  React.useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      setHasError(true)
+      setError(new Error(event.message))
+      onError?.(new Error(event.message), {
+        componentStack: event.filename || "Unknown"
+      })
+    }
+
+    window.addEventListener("error", handleError)
+    return () => window.removeEventListener("error", handleError)
+  }, [onError])
+
+  if (hasError) {
+    return fallback || (
+      <Card className="border-red-200 dark:border-red-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-red-600 dark:text-red-400">
+            <XCircle className="h-5 w-5" />
+            <span>Errore</span>
+          </CardTitle>
+          <CardDescription>
+            Si è verificato un errore durante il rendering
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              {error?.message || "Errore sconosciuto"}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return <>{children}</>
+}

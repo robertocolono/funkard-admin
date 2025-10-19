@@ -20,9 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Sidebar />
 
             {/* Main content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col lg:ml-0">
               {/* Topbar */}
-              <header className="bg-card border-b border-border px-6 py-4">
+              <header className="bg-card/80 backdrop-blur-sm border-b border-border px-4 lg:px-6 py-4 sticky top-0 z-30">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-semibold text-foreground">
@@ -37,11 +37,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                        pathname === "/dashboard/staff" ? "Staff" :
                        "Dashboard"}
                     </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {pathname === "/dashboard" ? "Panoramica del sistema" :
+                       pathname === "/dashboard/users" ? "Gestione utenti" :
+                       pathname === "/dashboard/market" ? "Gestione marketplace" :
+                       pathname === "/dashboard/support" ? "Ticket di supporto" :
+                       pathname === "/dashboard/notifications" ? "Notifiche di sistema" :
+                       pathname === "/dashboard/logs" ? "Log delle attività" :
+                       pathname === "/dashboard/system" ? "Monitoraggio sistema" :
+                       pathname === "/dashboard/settings" ? "Configurazioni" :
+                       pathname === "/dashboard/staff" ? "Gestione staff" :
+                       "Amministrazione"}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 lg:space-x-4">
                     <NotificationBell />
                     <SSEStatus />
-                    <div className="text-sm text-muted-foreground">
+                    <div className="hidden lg:block text-sm text-muted-foreground">
                       Admin Panel
                     </div>
                   </div>
@@ -49,8 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </header>
 
               {/* Content */}
-              <main className="flex-1 p-8 overflow-y-auto">
-                {children}
+              <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+                <div className="max-w-7xl mx-auto">
+                  {children}
+                </div>
               </main>
             </div>
           </div>

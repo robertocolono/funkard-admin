@@ -2,6 +2,8 @@
 
 import { Card } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
@@ -11,9 +13,10 @@ interface StatCardProps {
     value: number;
     label: string;
   };
-  color?: "blue" | "green" | "red" | "yellow" | "purple" | "gray";
+  color?: "blue" | "green" | "red" | "yellow" | "purple" | "gray" | "funkard";
   icon?: React.ReactNode;
   className?: string;
+  loading?: boolean;
 }
 
 export default function StatCard({
@@ -24,6 +27,7 @@ export default function StatCard({
   color = "blue",
   icon,
   className = "",
+  loading = false,
 }: StatCardProps) {
   const getColorClasses = () => {
     switch (color) {
@@ -61,19 +65,27 @@ export default function StatCard({
         };
       case "gray":
         return {
-          bg: "bg-gray-50",
-          border: "border-gray-200",
-          text: "text-gray-700",
-          icon: "text-gray-600",
-          value: "text-gray-900",
+          bg: "bg-gray-50 dark:bg-gray-900",
+          border: "border-gray-200 dark:border-gray-800",
+          text: "text-gray-700 dark:text-gray-300",
+          icon: "text-gray-600 dark:text-gray-400",
+          value: "text-gray-900 dark:text-white",
+        };
+      case "funkard":
+        return {
+          bg: "bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20",
+          border: "border-primary/20 dark:border-primary/30",
+          text: "text-primary dark:text-primary",
+          icon: "text-primary dark:text-primary",
+          value: "text-primary dark:text-primary",
         };
       default: // blue
         return {
-          bg: "bg-blue-50",
-          border: "border-blue-200",
-          text: "text-blue-700",
-          icon: "text-blue-600",
-          value: "text-blue-900",
+          bg: "bg-blue-50 dark:bg-blue-900/20",
+          border: "border-blue-200 dark:border-blue-800",
+          text: "text-blue-700 dark:text-blue-300",
+          icon: "text-blue-600 dark:text-blue-400",
+          value: "text-blue-900 dark:text-blue-100",
         };
     }
   };
@@ -100,41 +112,66 @@ export default function StatCard({
 
   const colors = getColorClasses();
 
+  if (loading) {
+    return (
+      <Card className={cn("card-hover glass", className)}>
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="loading-skeleton h-4 w-24 mb-2"></div>
+              <div className="loading-skeleton h-8 w-16 mb-2"></div>
+              <div className="loading-skeleton h-3 w-32"></div>
+            </div>
+            <div className="loading-skeleton h-8 w-8 rounded ml-4"></div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className={`${colors.bg} ${colors.border} border-2 ${className}`}>
-      <div className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className={`text-sm font-medium ${colors.text}`}>
-              {title}
-            </p>
-            <p className={`text-2xl font-bold ${colors.value} mt-1`}>
-              {value}
-            </p>
-            {description && (
-              <p className={`text-xs ${colors.text} mt-1`}>
-                {description}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <Card className={cn("card-hover glass group", colors.bg, colors.border, "border-2", className)}>
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className={cn("text-sm font-medium transition-colors group-hover:text-foreground", colors.text)}>
+                {title}
               </p>
+              <p className={cn("text-2xl font-bold mt-1", colors.value)}>
+                {value}
+              </p>
+              {description && (
+                <p className={cn("text-xs mt-1", colors.text)}>
+                  {description}
+                </p>
+              )}
+            </div>
+            
+            {icon && (
+              <div className={cn("ml-4 transition-all duration-200 group-hover:scale-110", colors.icon)}>
+                {icon}
+              </div>
             )}
           </div>
           
-          {icon && (
-            <div className={`${colors.icon} ml-4`}>
-              {icon}
+          {trend && (
+            <div className="flex items-center mt-3">
+              {getTrendIcon()}
+              <span className={cn("text-xs font-medium ml-1", getTrendColor())}>
+                {trend.value > 0 ? "+" : ""}{trend.value}% {trend.label}
+              </span>
             </div>
           )}
         </div>
-        
-        {trend && (
-          <div className="flex items-center mt-3">
-            {getTrendIcon()}
-            <span className={`text-xs font-medium ml-1 ${getTrendColor()}`}>
-              {trend.value > 0 ? "+" : ""}{trend.value}% {trend.label}
-            </span>
-          </div>
-        )}
-      </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 }
 

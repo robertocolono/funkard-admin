@@ -230,3 +230,254 @@ body {
     display: none !important;
   }
 }
+
+/* UI Component Styles */
+.analytics {
+  @apply space-y-4;
+}
+
+.analytics .analytics-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.analytics .analytics-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.analytics .analytics-description {
+  @apply text-muted-foreground;
+}
+
+.analytics .analytics-content {
+  @apply space-y-4;
+}
+
+.analytics .analytics-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+.performance {
+  @apply space-y-4;
+}
+
+.performance .performance-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.performance .performance-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.performance .performance-description {
+  @apply text-muted-foreground;
+}
+
+.performance .performance-content {
+  @apply space-y-4;
+}
+
+.performance .performance-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+.security {
+  @apply space-y-4;
+}
+
+.security .security-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.security .security-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.security .security-description {
+  @apply text-muted-foreground;
+}
+
+.security .security-content {
+  @apply space-y-4;
+}
+
+.security .security-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+.monitoring {
+  @apply space-y-4;
+}
+
+.monitoring .monitoring-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.monitoring .monitoring-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.monitoring .monitoring-description {
+  @apply text-muted-foreground;
+}
+
+.monitoring .monitoring-content {
+  @apply space-y-4;
+}
+
+.monitoring .monitoring-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+.logs {
+  @apply space-y-4;
+}
+
+.logs .logs-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.logs .logs-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.logs .logs-description {
+  @apply text-muted-foreground;
+}
+
+.logs .logs-content {
+  @apply space-y-4;
+}
+
+.logs .logs-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+.debug {
+  @apply space-y-4;
+}
+
+.debug .debug-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.debug .debug-title {
+  @apply text-2xl font-bold text-foreground;
+}
+
+.debug .debug-description {
+  @apply text-muted-foreground;
+}
+
+.debug .debug-content {
+  @apply space-y-4;
+}
+
+.debug .debug-footer {
+  @apply flex items-center justify-between pt-4 border-t border-border;
+}
+
+/* Stateful component styles */
+.stateful-analytics,
+.stateful-performance,
+.stateful-security,
+.stateful-monitoring,
+.stateful-logs,
+.stateful-debug {
+  @apply relative;
+}
+
+.stateful-analytics::before,
+.stateful-performance::before,
+.stateful-security::before,
+.stateful-monitoring::before,
+.stateful-logs::before,
+.stateful-debug::before {
+  @apply absolute top-0 right-0 w-2 h-2 bg-accent rounded-full opacity-0 transition-opacity duration-200;
+}
+
+.stateful-analytics.active::before,
+.stateful-performance.active::before,
+.stateful-security.active::before,
+.stateful-monitoring.active::before,
+.stateful-logs.active::before,
+.stateful-debug.active::before {
+  @apply opacity-100;
+}
+
+/* Callback component styles */
+.callback-analytics,
+.callback-performance,
+.callback-security,
+.callback-monitoring,
+.callback-logs,
+.callback-debug {
+  @apply relative;
+}
+
+.callback-analytics::after,
+.callback-performance::after,
+.callback-security::after,
+.callback-monitoring::after,
+.callback-logs::after,
+.callback-debug::after {
+  @apply absolute bottom-0 left-0 w-full h-1 bg-accent/20 rounded-full;
+}
+
+/* Focus component styles */
+.focus-analytics,
+.focus-performance,
+.focus-security,
+.focus-monitoring,
+.focus-logs,
+.focus-debug {
+  @apply relative;
+}
+
+.focus-analytics:focus-within,
+.focus-performance:focus-within,
+.focus-security:focus-within,
+.focus-monitoring:focus-within,
+.focus-logs:focus-within,
+.focus-debug:focus-within {
+  @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
+}
+
+/* Resize component styles */
+.resize-analytics,
+.resize-performance,
+.resize-security,
+.resize-monitoring,
+.resize-logs,
+.resize-debug {
+  @apply relative;
+}
+
+.resize-analytics::before,
+.resize-performance::before,
+.resize-security::before,
+.resize-monitoring::before,
+.resize-logs::before,
+.resize-debug::before {
+  @apply absolute top-0 left-0 w-full h-1 bg-accent/20 rounded-full;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .analytics,
+  .performance,
+  .security,
+  .monitoring,
+  .logs,
+  .debug {
+    @apply space-y-2;
+  }
+  
+  .analytics .analytics-header,
+  .performance .performance-header,
+  .security .security-header,
+  .monitoring .monitoring-header,
+  .logs .logs-header,
+  .debug .debug-header {
+    @apply flex-col items-start space-y-2;
+  }
+}

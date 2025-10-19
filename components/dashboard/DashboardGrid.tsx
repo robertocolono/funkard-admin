@@ -29,15 +29,15 @@ export default function DashboardGrid() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="dashboard-grid"
       >
         <StatCard
           title="Notifiche"
           value={42}
           description="Notifiche totali"
           trend={{ value: 12, label: "vs scorsa settimana" }}
-          color="blue"
-          icon={<div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">🔔</div>}
+          color="funkard"
+          icon={<div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">🔔</div>}
         />
         
         <StatCard
@@ -46,7 +46,7 @@ export default function DashboardGrid() {
           description="Utenti registrati"
           trend={{ value: 8, label: "vs scorsa settimana" }}
           color="green"
-          icon={<div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">👥</div>}
+          icon={<div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">👥</div>}
         />
         
         <StatCard
@@ -55,7 +55,7 @@ export default function DashboardGrid() {
           description="Errori rilevati"
           trend={{ value: -25, label: "vs scorsa settimana" }}
           color="red"
-          icon={<div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">⚠️</div>}
+          icon={<div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">⚠️</div>}
         />
         
         <StatCard
@@ -63,7 +63,7 @@ export default function DashboardGrid() {
           value="Online"
           description="Stato operativo"
           color="green"
-          icon={<div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">✅</div>}
+          icon={<div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">✅</div>}
         />
       </motion.div>
 
