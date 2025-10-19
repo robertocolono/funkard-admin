@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Accessibility, 
+  Accessibility as AccessibilityIcon, 
   Activity, 
   Zap, 
   TrendingUp, 
@@ -130,7 +130,7 @@ export function AccessibilityWithIndicators({
         <div className="fixed top-4 right-4 z-50 bg-background border border-border rounded-md shadow-lg p-2">
           <div className="space-y-2">
             <div className="flex items-center space-x-2 text-sm">
-              <Accessibility className="h-4 w-4 text-blue-500" />
+              <AccessibilityIcon className="h-4 w-4 text-blue-500" />
               <span>Accessibility</span>
               <Badge variant="outline" className="text-xs">
                 {Object.values(settings).filter(Boolean).length} active
