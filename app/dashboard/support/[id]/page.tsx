@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, MessageSquare, Clock, CheckCircle, XCircle, User, Mail, Calendar } from "lucide-react";
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
+import HistorySection from "@/components/admin/history/HistorySection";
 
 interface TicketDetail {
   id: string;
@@ -320,6 +321,9 @@ export default function TicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Storico azioni modulare */}
+      <HistorySection type="TICKET" targetId={parseInt(params.id as string)} />
     </div>
   );
 }

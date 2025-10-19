@@ -5,8 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Bell, AlertTriangle, Info, MessageSquare, ShoppingBag, Database, CheckCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { apiGet, apiDelete } from "@/lib/api";
-import { getActionHistory } from "@/services/adminService";
-import { AdminActionLog } from "@/types/AdminActionLog";
+import HistorySection from "@/components/admin/history/HistorySection";
 
 interface NotificationDetail {
   id: string;
@@ -37,46 +36,6 @@ export default function NotificationDetailPage() {
   const [notification, setNotification] = useState<NotificationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<AdminActionLog[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-
-  // Funzione per caricare lo storico
-  const loadHistory = async () => {
-    if (!params.id) return;
-    
-    setHistoryLoading(true);
-    try {
-      const actionHistory = await getActionHistory("NOTIFICATION", parseInt(params.id as string));
-      setHistory(actionHistory);
-    } catch (err) {
-      console.error("Errore caricamento storico:", err);
-      // Fallback a mock data per testing
-      setHistory([
-        {
-          id: 1,
-          targetId: parseInt(params.id as string),
-          targetType: "NOTIFICATION",
-          action: "Notifica creata",
-          performedBy: "system",
-          role: "system",
-          notes: "Notifica generata automaticamente dal sistema",
-          createdAt: "2025-01-15T10:30:00Z"
-        },
-        {
-          id: 2,
-          targetId: parseInt(params.id as string),
-          targetType: "NOTIFICATION",
-          action: "Tentativo di riconnessione automatica",
-          performedBy: "system",
-          role: "system",
-          notes: "Sistema ha tentato di riconnettersi al database",
-          createdAt: "2025-01-15T10:32:00Z"
-        }
-      ]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
 
   useEffect(() => {
     // ✅ Fetch reale pronto, da attivare dopo fix backend:
@@ -119,9 +78,6 @@ export default function NotificationDetailPage() {
         ]
       });
       setLoading(false);
-      
-      // Carica lo storico
-      loadHistory();
     }, 600);
   }, [params.id]);
 
@@ -382,25 +338,8 @@ export default function NotificationDetailPage() {
             </div>
           </div>
 
-          {/* Storico azioni */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Storico Azioni</h3>
-            {historyLoading ? (
-              <p className="text-sm text-gray-500">Caricamento storico...</p>
-            ) : history.length === 0 ? (
-              <p className="text-xs text-gray-500">Nessuna azione registrata.</p>
-            ) : (
-              <ul className="space-y-1">
-                {history.map((a) => (
-                  <li key={a.id} className="text-xs text-gray-700">
-                    <b>{a.performedBy}</b> ({a.role}) → <span className="font-medium">{a.action}</span>
-                    {a.notes ? ` — ${a.notes}` : ""} <br />
-                    <span className="text-[10px] text-gray-400">{new Date(a.createdAt).toLocaleString()}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {/* Storico azioni modulare */}
+          <HistorySection type="NOTIFICATION" targetId={parseInt(params.id as string)} />
         </div>
       </div>
     </div>
