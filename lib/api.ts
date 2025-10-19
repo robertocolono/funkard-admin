@@ -96,6 +96,46 @@ export async function fetchAdminLogById(id: string) {
   return handle<any>(res);
 }
 
+// 🎫 SUPPORT TICKETS
+export async function fetchSupportTickets(params?: Record<string, string>) {
+  const query = new URLSearchParams();
+  if (params) Object.entries(params).forEach(([k, v]) => query.append(k, String(v)));
+
+  const res = await fetch(`${BASE_URL}/api/support?${query.toString()}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function fetchSupportTicketById(id: string) {
+  const res = await fetch(`${BASE_URL}/api/support/${id}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function updateTicketStatus(id: string, status: string, note?: string) {
+  const res = await fetch(`${BASE_URL}/api/support/${id}/status`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ status, note }),
+  });
+  if (!res.ok) throw new Error('Impossibile aggiornare il ticket');
+  return handle<any>(res);
+}
+
+export async function createSupportTicket(email: string, subject: string, message: string) {
+  const res = await fetch(`${BASE_URL}/api/support`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ email, subject, message }),
+  });
+  if (!res.ok) throw new Error('Impossibile creare il ticket');
+  return handle<any>(res);
+}
+
 // 🔄 COMPATIBILITÀ - Funzioni legacy per compatibilità
 export async function pingAPI() {
   return pingSystem();
