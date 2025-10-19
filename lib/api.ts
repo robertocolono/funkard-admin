@@ -174,19 +174,38 @@ export async function getSupportTickets() {
   }>>("/api/admin/support/tickets");
 }
 
+// ===== NOTIFICHE ADMIN =====
+
 /**
- * Recupera notifiche admin attive
+ * Recupera notifiche admin attive con filtri
  */
-export async function getNotifications() {
+export async function getNotifications(filters?: {
+  type?: string;
+  priority?: string;
+  status?: string;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.type) params.append("type", filters.type);
+  if (filters?.priority) params.append("priority", filters.priority);
+  if (filters?.status) params.append("status", filters.status);
+  
+  const query = params.toString();
+  const endpoint = query ? `/api/admin/notifications?${query}` : "/api/admin/notifications";
+  
   return apiGet<Array<{
     id: number;
+    type: string;
+    priority: string;
     title: string;
     message: string;
-    type: "ERROR" | "MARKET" | "SUPPORT" | "SYSTEM" | "GRADING";
-    priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
-    read_status: boolean;
-    created_at: string;
-  }>>("/api/admin/notifications");
+    readStatus: boolean;
+    readAt: string | null;
+    createdAt: string;
+    archived: boolean;
+    resolvedAt: string | null;
+    resolvedBy: string | null;
+    history: string;
+  }>>(endpoint);
 }
 
 /**
@@ -195,41 +214,85 @@ export async function getNotifications() {
 export async function getArchivedNotifications() {
   return apiGet<Array<{
     id: number;
+    type: string;
+    priority: string;
     title: string;
     message: string;
-    type: "ERROR" | "MARKET" | "SUPPORT" | "SYSTEM" | "GRADING";
-    priority: "HIGH" | "MEDIUM" | "LOW" | "INFO";
-    created_at: string;
-    archived_at: string;
+    createdAt: string;
+    archivedAt: string;
+    resolvedAt: string | null;
+    resolvedBy: string | null;
+    history: string;
   }>>("/api/admin/notifications/archive");
+}
+
+/**
+ * Recupera dettaglio notifica
+ */
+export async function getNotification(id: number) {
+  return apiGet<{
+    id: number;
+    type: string;
+    priority: string;
+    title: string;
+    message: string;
+    readStatus: boolean;
+    readAt: string | null;
+    createdAt: string;
+    archived: boolean;
+    resolvedAt: string | null;
+    resolvedBy: string | null;
+    history: string;
+  }>(`/api/admin/notifications/${id}`);
 }
 
 /**
  * Segna notifica come letta
  */
 export async function markNotificationAsRead(id: number) {
-  return apiPatch(`/api/admin/notifications/${id}/read`);
+  return apiPost(`/api/admin/notifications/${id}/read`);
 }
 
 /**
- * Archivia notifica
+ * Risolvi notifica con nota opzionale
  */
-export async function archiveNotification(id: number) {
-  return apiPatch(`/api/admin/notifications/archive/${id}`);
+export async function resolveNotification(id: number, note?: string) {
+  return apiPost(`/api/admin/notifications/${id}/resolve`, { note });
 }
 
 /**
- * Elimina notifica definitivamente
+ * Archivia notifica con nota opzionale
  */
-export async function deleteNotification(id: number) {
-  return apiDelete(`/api/admin/notifications/delete/${id}`);
+export async function archiveNotification(id: number, note?: string) {
+  return apiPost(`/api/admin/notifications/${id}/archive`, { note });
 }
 
 /**
- * Segna notifica come risolta (legacy)
+ * Conta notifiche non lette
  */
-export async function resolveNotification(id: number) {
-  return apiPatch(`/api/admin/notifications/${id}/resolve`);
+export async function getUnreadCount() {
+  return apiGet<{ unreadCount: number }>("/api/admin/notifications/unreadCount");
+}
+
+/**
+ * Recupera notifiche recenti per SSE
+ */
+export async function getRecentNotifications() {
+  return apiGet<Array<{
+    id: number;
+    type: string;
+    priority: string;
+    title: string;
+    message: string;
+    createdAt: string;
+  }>>("/api/admin/notifications/recent");
+}
+
+/**
+ * Cleanup notifiche archiviate
+ */
+export async function cleanupArchivedNotifications(days: number = 30) {
+  return apiDelete<{ deleted: number; olderThanDays: number }>(`/api/admin/notifications/cleanup?days=${days}`);
 }
 
 /**

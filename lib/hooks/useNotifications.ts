@@ -1,94 +1,143 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { 
+  getNotifications, 
+  getUnreadCount, 
+  markNotificationAsRead, 
+  resolveNotification, 
+  archiveNotification 
+} from '@/lib/api';
 
-interface Notification {
-  id: string;
+interface AdminNotification {
+  id: number;
+  type: string;
+  priority: string;
+  title: string;
   message: string;
-  productId: string;
-  type: 'warning' | 'info' | 'error';
+  readStatus: boolean;
+  readAt: string | null;
   createdAt: string;
+  archived: boolean;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  history: string;
 }
 
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [newNotificationCount, setNewNotificationCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-  const [toastNotifications, setToastNotifications] = useState<Notification[]>([]);
+interface NotificationFilters {
+  type?: string;
+  priority?: string;
+  status?: string;
+}
 
-  useEffect(() => {
-    // Richiedi permessi per notifiche browser
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+export function useNotifications(filters?: NotificationFilters) {
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch notifiche iniziali
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const data = await getNotifications(filters);
+      setNotifications(data);
+      
+      // Aggiorna contatore non lette
+      const unreadData = await getUnreadCount();
+      setUnreadCount(unreadData.unreadCount);
+      
+    } catch (err) {
+      console.error("Errore fetch notifiche:", err);
+      setError("Errore nel caricamento delle notifiche");
+    } finally {
+      setLoading(false);
     }
+  }, [filters]);
 
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/notifications/stream`);
-
-    eventSource.addEventListener("notification", (event) => {
-      const newNotif = JSON.parse(event.data);
-      console.log("🔔 Nuova notifica:", newNotif);
+  // Mark as read
+  const markAsRead = useCallback(async (id: number) => {
+    try {
+      await markNotificationAsRead(id);
       
-      // Aggiungi la nuova notifica allo stato esistente
-      setNotifications(prev => [newNotif, ...prev]);
+      // Aggiorna stato locale
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === id 
+            ? { ...n, readStatus: true, readAt: new Date().toISOString() }
+            : n
+        )
+      );
       
-      // Aggiungi anche ai toast
-      setToastNotifications(prev => [newNotif, ...prev]);
+      // Aggiorna contatore
+      setUnreadCount(prev => Math.max(0, prev - 1));
       
-      // Incrementa il contatore delle nuove notifiche
-      setNewNotificationCount(prev => prev + 1);
-      
-      // Mostra notifica browser se permesso
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Nuova Notifica Funkard', {
-          body: newNotif.message,
-          icon: '/favicon.ico',
-          tag: 'funkard-notification'
-        });
-      }
-    });
-
-    eventSource.addEventListener("notification-resolved", (event) => {
-      const resolvedNotif = JSON.parse(event.data);
-      console.log("✅ Notifica risolta:", resolvedNotif);
-      
-      // Rimuovi la notifica risolta dallo stato
-      setNotifications(prev => prev.filter(n => n.id !== resolvedNotif.id));
-    });
-
-    eventSource.onopen = () => {
-      console.log("🔗 Connessione SSE stabilita");
-      setIsConnected(true);
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("❌ Errore SSE:", error);
-      setIsConnected(false);
-    };
-
-    return () => {
-      eventSource.close();
-      setIsConnected(false);
-    };
+    } catch (err) {
+      console.error("Errore mark as read:", err);
+      setError("Errore nel segnare come letta");
+    }
   }, []);
 
-  const markAsRead = () => {
-    setNewNotificationCount(0);
-  };
+  // Resolve notification
+  const resolve = useCallback(async (id: number, note?: string) => {
+    try {
+      await resolveNotification(id, note);
+      
+      // Aggiorna stato locale
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === id 
+            ? { 
+                ...n, 
+                resolvedAt: new Date().toISOString(), 
+                resolvedBy: "admin" // TODO: get from auth context
+              }
+            : n
+        )
+      );
+      
+    } catch (err) {
+      console.error("Errore resolve:", err);
+      setError("Errore nel risolvere notifica");
+    }
+  }, []);
 
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  // Archive notification
+  const archive = useCallback(async (id: number, note?: string) => {
+    try {
+      await archiveNotification(id, note);
+      
+      // Rimuovi dalla lista locale
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      
+      // Aggiorna contatore
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+    } catch (err) {
+      console.error("Errore archive:", err);
+      setError("Errore nell'archiviare notifica");
+    }
+  }, []);
 
-  const removeToast = (id: string) => {
-    setToastNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  // Refresh data
+  const refresh = useCallback(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Load initial data
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   return {
     notifications,
-    newNotificationCount,
-    isConnected,
-    toastNotifications,
+    unreadCount,
+    loading,
+    error,
     markAsRead,
-    removeNotification,
-    removeToast
+    resolve,
+    archive,
+    refresh,
   };
 }
