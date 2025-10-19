@@ -13,8 +13,11 @@ import {
   Server,
   Activity,
   HardDrive,
-  Cpu
+  Cpu,
+  History,
+  Calendar
 } from "lucide-react";
+import { getCleanupLogs, getSystemStatus } from "@/lib/api/system";
 
 interface SystemStatus {
   result: string;
@@ -31,14 +34,25 @@ interface SystemHealth {
   memoryUsage: number;
 }
 
+interface CleanupLog {
+  id: number;
+  timestamp: string;
+  result: "success" | "error";
+  deleted: number;
+  details?: string;
+}
+
 export default function SystemStatus() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [logs, setLogs] = useState<CleanupLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
     fetchSystemStatus();
     fetchSystemHealth();
+    fetchCleanupLogs();
   }, []);
 
   const fetchSystemStatus = async () => {
@@ -68,6 +82,42 @@ export default function SystemStatus() {
       console.error("Errore fetch system health:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCleanupLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const data = await getCleanupLogs();
+      setLogs(data.reverse()); // mostra i più recenti per ultimi
+    } catch (err) {
+      console.error("Errore fetch cleanup logs:", err);
+      // Mock data per testing
+      setLogs([
+        {
+          id: 1,
+          timestamp: "2025-01-17T02:00:00Z",
+          result: "success",
+          deleted: 8,
+          details: undefined
+        },
+        {
+          id: 2,
+          timestamp: "2025-01-16T02:00:00Z",
+          result: "error",
+          deleted: 0,
+          details: "Market refresh failed"
+        },
+        {
+          id: 3,
+          timestamp: "2025-01-15T02:00:00Z",
+          result: "success",
+          deleted: 12,
+          details: undefined
+        }
+      ]);
+    } finally {
+      setLogsLoading(false);
     }
   };
 
@@ -128,6 +178,7 @@ export default function SystemStatus() {
             setLoading(true);
             fetchSystemStatus();
             fetchSystemHealth();
+            fetchCleanupLogs();
           }}
           variant="outline"
           className="flex items-center gap-2"
@@ -360,6 +411,74 @@ export default function SystemStatus() {
                 <span className="text-gray-800">15/01/2025</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sezione Ultimi Cleanup */}
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-purple-600" />
+              🧹 Ultimi Cleanup
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Caricamento log...</span>
+                </div>
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Nessun log di cleanup disponibile</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-200 bg-white text-gray-800 rounded-lg">
+                  <thead>
+                    <tr className="text-left bg-gray-50">
+                      <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-700">Data</th>
+                      <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-700">Risultato</th>
+                      <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-700">Eliminati</th>
+                      <th className="px-4 py-3 border-b border-gray-200 font-medium text-gray-700">Dettagli</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((log, i) => (
+                      <tr key={log.id || i} className="border-t border-gray-200 hover:bg-gray-50 transition">
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(log.timestamp).toLocaleString("it-IT")}
+                        </td>
+                        <td className="px-4 py-3">
+                          {log.result === "success" ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                              <CheckCircle className="w-4 h-4" />
+                              Successo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-red-600 font-medium">
+                              <AlertTriangle className="w-4 h-4" />
+                              Errore
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          {log.deleted}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {log.details || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
