@@ -1,100 +1,61 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useSSE } from './useSSE';
-import { getUnreadCount, getRecentNotifications } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useSSE } from "./useSSE";
+import { fetchNotifications } from "@/lib/api";
 
-interface NotificationSSEState {
-  unreadCount: number;
-  recentNotifications: Array<{
-    id: number;
-    type: string;
-    priority: string;
-    title: string;
-    message: string;
-    createdAt: string;
-  }>;
-  isConnected: boolean;
-  error: string | null;
+interface AdminNotification {
+  id: number;
+  type: string;
+  priority: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  readStatus: boolean;
 }
 
-export function useNotificationSSE() {
-  const [state, setState] = useState<NotificationSSEState>({
-    unreadCount: 0,
-    recentNotifications: [],
-    isConnected: false,
-    error: null,
-  });
+export function useNotifications() {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState<AdminNotification[]>([]);
 
-  // SSE connection per notifiche real-time
-  const sse = useSSE({
-    url: `${process.env.NEXT_PUBLIC_API_URL}/api/admin/notifications/stream`,
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5,
-    timeout: 30000,
+  const updateCountsAndNotifications = async () => {
+    try {
+      const data = await fetchNotifications();
+      const unread = data.filter(n => !n.readStatus).length;
+      setUnreadCount(unread);
+      setRecentNotifications(data.slice(0, 5)); // Ultime 5
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  };
+
+  useSSE({
+    url: `${process.env.NEXT_PUBLIC_API_BASE}/api/admin/notifications/stream`,
     onMessage: (data) => {
-      console.log("🔔 SSE Notification:", data);
-      
-      // Aggiorna contatore non lette
-      if (typeof data.unreadCount === 'number') {
-        setState(prev => ({ ...prev, unreadCount: data.unreadCount }));
-      }
-      
-      // Aggiorna notifiche recenti
-      if (data.notifications && Array.isArray(data.notifications)) {
-        setState(prev => ({ ...prev, recentNotifications: data.notifications }));
+      console.log("🔔 Nuova notifica SSE:", data);
+      // Aggiorna la lista con la nuova notifica
+      if (data.id) {
+        setRecentNotifications(prev => {
+          const exists = prev.some(n => n.id === data.id);
+          if (!exists) {
+            return [data, ...prev].slice(0, 5);
+          }
+          return prev;
+        });
+        setUnreadCount(prev => prev + 1);
       }
     },
-    onError: (error) => {
-      console.error("❌ SSE Error:", error);
-      setState(prev => ({ ...prev, error: "Errore connessione real-time" }));
+    onError: (err) => {
+      console.error("SSE Notification Error:", err);
     },
     onReconnect: (attempt) => {
-      console.log(`🔄 SSE Reconnect attempt ${attempt}`);
-    },
-    onMaxReconnectAttempts: () => {
-      console.error("❌ SSE Max reconnect attempts reached");
-      setState(prev => ({ ...prev, error: "Connessione real-time persa" }));
+      console.log(`SSE Notification: Reconnecting attempt ${attempt}`);
     },
   });
 
-  // Fetch iniziale dati
-  const fetchInitialData = useCallback(async () => {
-    try {
-      const [unreadData, recentData] = await Promise.all([
-        getUnreadCount(),
-        getRecentNotifications(),
-      ]);
-      
-      setState(prev => ({
-        ...prev,
-        unreadCount: unreadData.unreadCount,
-        recentNotifications: recentData,
-        error: null,
-      }));
-    } catch (err) {
-      console.error("Errore fetch iniziale:", err);
-      setState(prev => ({ ...prev, error: "Errore caricamento dati" }));
-    }
+  useEffect(() => {
+    updateCountsAndNotifications(); // Initial fetch
   }, []);
 
-  // Load initial data
-  useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
-
-  // Update connection state
-  useEffect(() => {
-    setState(prev => ({ ...prev, isConnected: sse.isConnected }));
-  }, [sse.isConnected]);
-
-  return {
-    ...state,
-    isConnected: sse.isConnected,
-    isReconnecting: sse.isReconnecting,
-    reconnectAttempts: sse.reconnectAttempts,
-    reconnect: sse.reconnect,
-    disconnect: sse.disconnect,
-    refresh: fetchInitialData,
-  };
+  return { unreadCount, recentNotifications, isConnected: true, refresh: updateCountsAndNotifications };
 }

@@ -1,92 +1,56 @@
-"use client";
+'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Trash2, Archive, CheckCircle } from "lucide-react";
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title?: string;
+  open: boolean;
+  title: string;
   description?: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: "default" | "destructive";
-  isLoading?: boolean;
+  onConfirm: () => Promise<void> | void;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function ConfirmDialog({
-  isOpen,
-  onClose,
+  open,
+  title,
+  description,
+  confirmText = 'Conferma',
+  cancelText = 'Annulla',
   onConfirm,
-  title = "Conferma azione",
-  description = "Sei sicuro di voler procedere?",
-  confirmText = "Conferma",
-  cancelText = "Annulla",
-  variant = "default",
-  isLoading = false,
+  onOpenChange,
 }: ConfirmDialogProps) {
-  const isDestructive = variant === "destructive";
-
-  const getIcon = () => {
-    if (isDestructive) {
-      return <Trash2 className="h-6 w-6 text-red-500" />;
-    }
-    if (title.toLowerCase().includes("archivia")) {
-      return <Archive className="h-6 w-6 text-blue-500" />;
-    }
-    if (title.toLowerCase().includes("risolvi")) {
-      return <CheckCircle className="h-6 w-6 text-green-500" />;
-    }
-    return <AlertTriangle className="h-6 w-6 text-yellow-500" />;
-  };
+  const [busy, setBusy] = useState(false);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
+      <DialogContent className="sm:max-w-md bg-neutral-900 border border-neutral-800 text-white">
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            {getIcon()}
-            <DialogTitle className="text-lg font-semibold">
-              {title}
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-sm text-gray-600">
-            {description}
-          </DialogDescription>
+          <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
         </DialogHeader>
-        
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1"
-          >
+
+        {description && <p className="text-sm text-neutral-400">{description}</p>}
+
+        <DialogFooter className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
             {cancelText}
           </Button>
           <Button
-            variant={isDestructive ? "destructive" : "default"}
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="flex-1"
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onConfirm();
+              } finally {
+                setBusy(false);
+                onOpenChange(false);
+              }
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white"
           >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Caricamento...
-              </div>
-            ) : (
-              confirmText
-            )}
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

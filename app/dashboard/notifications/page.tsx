@@ -9,11 +9,11 @@ import NotificationsFilters from "@/components/notifications/NotificationsFilter
 import NotificationsList from "@/components/notifications/NotificationsList";
 import NotificationsActions from "@/components/notifications/NotificationsActions";
 import { 
-  getNotifications, 
-  markNotificationAsRead, 
+  fetchNotifications, 
+  markRead, 
   resolveNotification, 
   archiveNotification,
-  cleanupArchivedNotifications 
+  cleanupArchived 
 } from "@/lib/api";
 
 interface NotificationFilters {
@@ -44,7 +44,7 @@ export default function NotificationsPage() {
         setLoading(true);
         setError(null);
         
-        const data = await getNotifications({
+        const data = await fetchNotifications({
           type: filters.type || undefined,
           priority: filters.priority || undefined,
           status: filters.status || undefined,
@@ -76,7 +76,7 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (id: number) => {
     try {
-      await markNotificationAsRead(id);
+      await markRead(String(id));
       setNotifications(prev => 
         prev.map(n => 
           n.id === id 
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
 
   const handleResolve = async (id: number, note?: string) => {
     try {
-      await resolveNotification(id, note);
+      await resolveNotification(String(id), note);
       setNotifications(prev => 
         prev.map(n => 
           n.id === id 
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
 
   const handleArchive = async (id: number, note?: string) => {
     try {
-      await archiveNotification(id, note);
+      await archiveNotification(String(id));
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (err) {
       console.error("Errore archive:", err);
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
   const handleMarkAllRead = async () => {
     try {
       const unreadNotifications = notifications.filter(n => !n.readStatus);
-      await Promise.all(unreadNotifications.map(n => markNotificationAsRead(n.id)));
+      await Promise.all(unreadNotifications.map(n => markRead(String(n.id))));
       setNotifications(prev => 
         prev.map(n => ({ ...n, readStatus: true, readAt: new Date().toISOString() }))
       );
@@ -131,9 +131,9 @@ export default function NotificationsPage() {
 
   const handleCleanupArchived = async () => {
     try {
-      await cleanupArchivedNotifications(30);
+      await cleanupArchived();
       // Refresh notifications after cleanup
-      const data = await getNotifications();
+      const data = await fetchNotifications();
       setNotifications(data);
     } catch (err) {
       console.error("Errore cleanup:", err);
