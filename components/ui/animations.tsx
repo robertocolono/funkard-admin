@@ -53,42 +53,42 @@ export function Animation({
           initial: { opacity: 0, y: -20 },
           animate: { 
             opacity: 1, 
-            y: 0,
-            transition: {
-              type: "spring",
-              stiffness: 300,
-              damping: 20
-            }
+            y: 0
           },
-          exit: { opacity: 0, y: -20 }
+          exit: { opacity: 0, y: -20 },
+          transition: {
+            type: "spring" as const,
+            stiffness: 300,
+            damping: 20
+          }
         }
       case "pulse":
         return {
           initial: { opacity: 0, scale: 0.8 },
           animate: { 
             opacity: 1, 
-            scale: 1,
-            transition: {
-              type: "spring",
-              stiffness: 200,
-              damping: 15
-            }
+            scale: 1
           },
-          exit: { opacity: 0, scale: 0.8 }
+          exit: { opacity: 0, scale: 0.8 },
+          transition: {
+            type: "spring" as const,
+            stiffness: 200,
+            damping: 15
+          }
         }
       case "shake":
         return {
           initial: { opacity: 0, x: -10 },
           animate: { 
             opacity: 1, 
-            x: 0,
-            transition: {
-              type: "spring",
-              stiffness: 300,
-              damping: 20
-            }
+            x: 0
           },
-          exit: { opacity: 0, x: 10 }
+          exit: { opacity: 0, x: 10 },
+          transition: {
+            type: "spring" as const,
+            stiffness: 300,
+            damping: 20
+          }
         }
       case "glow":
         return {
@@ -116,7 +116,7 @@ export function Animation({
       initial={animationVariant.initial}
       animate={animationVariant.animate}
       exit={animationVariant.exit}
-      transition={{
+      transition={animationVariant.transition || {
         duration,
         delay,
         ease: "easeInOut"
@@ -203,26 +203,26 @@ export function HoverAnimation({
       case "bounce":
         return {
           whileHover: { 
-            y: -5,
-            transition: {
-              type: "spring",
-              stiffness: 300,
-              damping: 20
-            }
+            y: -5
           },
-          whileTap: { y: 0 }
+          whileTap: { y: 0 },
+          transition: {
+            type: "spring" as const,
+            stiffness: 300,
+            damping: 20
+          }
         }
       case "pulse":
         return {
           whileHover: { 
-            scale: intensity,
-            transition: {
-              type: "spring",
-              stiffness: 200,
-              damping: 15
-            }
+            scale: intensity
           },
-          whileTap: { scale: 0.95 }
+          whileTap: { scale: 0.95 },
+          transition: {
+            type: "spring" as const,
+            stiffness: 200,
+            damping: 15
+          }
         }
       default:
         return {
@@ -237,8 +237,8 @@ export function HoverAnimation({
   return (
     <motion.div
       {...hoverVariant}
-      transition={{
-        type: "spring",
+      transition={hoverVariant.transition || {
+        type: "spring" as const,
         stiffness: 300,
         damping: 20
       }}
@@ -271,7 +271,7 @@ export function LoadingAnimation({
           transition: {
             duration: 1,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear" as const
           }
         }
       case "pulse":
@@ -283,7 +283,7 @@ export function LoadingAnimation({
           transition: {
             duration: 1.5,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         }
       case "bounce":
@@ -294,7 +294,7 @@ export function LoadingAnimation({
           transition: {
             duration: 0.6,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         }
       case "wave":
@@ -305,7 +305,7 @@ export function LoadingAnimation({
           transition: {
             duration: 0.8,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         }
       case "dots":
@@ -316,7 +316,7 @@ export function LoadingAnimation({
           transition: {
             duration: 0.5,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
           }
         }
       default:
@@ -325,7 +325,7 @@ export function LoadingAnimation({
           transition: {
             duration: 1,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear" as const
           }
         }
     }
