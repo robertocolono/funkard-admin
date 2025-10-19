@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield, Server } from "lucide-react";
+import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield, Server, FileText } from "lucide-react";
 import { useAdminRole, canAccess } from "@/lib/adminAuth";
 import { useAdminHealth } from "@/providers/AdminHealthProvider";
 
@@ -16,6 +16,7 @@ export default function Sidebar() {
     { label: "Market", icon: <ShoppingBag />, href: "/dashboard/market" },
     { label: "Support", icon: <LifeBuoy />, href: "/dashboard/support" },
     { label: "Notifiche", icon: <Bell />, href: "/dashboard/notifications" },
+    { label: "Logs", icon: <FileText />, href: "/dashboard/logs" },
     { label: "Sistema", icon: <Server />, href: "/dashboard/system" },
     { label: "Impostazioni", icon: <Settings />, href: "/dashboard/settings" },
   ];

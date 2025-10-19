@@ -75,6 +75,27 @@ export async function pingSystem() {
   return handle<{ status: string }>(res);
 }
 
+// 🔍 LOGS ADMIN (con paginazione e filtri)
+export async function fetchAdminLogs(params?: Record<string, string | number>) {
+  const query = new URLSearchParams();
+  if (params) Object.entries(params).forEach(([k, v]) => query.append(k, String(v)));
+
+  const res = await fetch(`${BASE_URL}/api/admin/logs?${query.toString()}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+// 🔎 Singolo log
+export async function fetchAdminLogById(id: string) {
+  const res = await fetch(`${BASE_URL}/api/admin/logs/${id}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
 // 🔄 COMPATIBILITÀ - Funzioni legacy per compatibilità
 export async function pingAPI() {
   return pingSystem();
