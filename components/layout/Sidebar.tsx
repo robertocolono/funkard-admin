@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield, Server, FileText } from "lucide-react";
 import { useAdminRole, canAccess } from "@/lib/adminAuth";
 import { useAdminHealth } from "@/providers/AdminHealthProvider";
+import SupportBadge from "@/components/admin/SupportBadge";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -14,7 +15,6 @@ export default function Sidebar() {
     { label: "Dashboard", icon: <BarChart3 />, href: "/dashboard" },
     { label: "Utenti", icon: <Users />, href: "/dashboard/users" },
     { label: "Market", icon: <ShoppingBag />, href: "/dashboard/market" },
-    { label: "Support", icon: <LifeBuoy />, href: "/dashboard/support" },
     { label: "Notifiche", icon: <Bell />, href: "/dashboard/notifications" },
     { label: "Logs", icon: <FileText />, href: "/dashboard/logs" },
     { label: "Sistema", icon: <Server />, href: "/dashboard/system" },
@@ -50,6 +50,9 @@ export default function Sidebar() {
               )}
             </Link>
           ))}
+          
+          {/* 🔥 Support Badge dinamico */}
+          <SupportBadge />
         </nav>
       </div>
 
