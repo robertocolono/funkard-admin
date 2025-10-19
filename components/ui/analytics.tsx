@@ -32,16 +32,7 @@ import {
   KeySquare,
   LockKeyhole,
   UnlockKeyhole,
-  LockKeyholeOpen,
-  UnlockKeyholeOpen,
-  LockKeyholeRound,
-  UnlockKeyholeRound,
-  LockKeyholeSquare,
-  UnlockKeyholeSquare,
-  LockKeyholeOpenRound,
-  UnlockKeyholeOpenRound,
-  LockKeyholeOpenSquare,
-  UnlockKeyholeOpenSquare
+  LockKeyholeOpen
 } from "lucide-react"
 
 // Componente per gestione delle analytics
