@@ -1,28 +1,18 @@
-// types/Notification.ts
-
-export type NotificationType =
-  | "market"
-  | "grading"
-  | "support"
-  | "error"
-  | "system";
-
-export type NotificationStatus = "unread" | "resolved" | "archived";
-
-export interface AdminNotification {
+export interface AdminNotificationDTO {
   id: string;
-  type: NotificationType;
   title: string;
   message: string;
-  importance: "low" | "medium" | "high";
-  status: NotificationStatus;
+  type: 'new_card' | 'new_user' | 'new_sale' | 'system_alert' | 'market_event' | 'product_update' | 'grading_error';
+  priority: 'urgent' | 'high' | 'normal' | 'low';
+  read: boolean;
+  archivedAt?: string;
   createdAt: string;
-  resolvedAt?: string;
-  metadata?: {
-    source?: string;
-    userId?: string;
-    itemId?: string;
-    ticketId?: string;
-    errorCode?: string;
-  };
+  updatedAt?: string;
+}
+
+export interface NotificationFilters {
+  type: string;
+  priority: string;
+  state: string;
+  q: string;
 }
