@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield } from "lucide-react";
+import { Bell, Users, ShoppingBag, BarChart3, LifeBuoy, Settings, Shield, Server } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAdminRole, canAccess } from "@/lib/adminAuth";
@@ -16,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: "Market", icon: <ShoppingBag />, href: "/dashboard/market" },
     { label: "Support", icon: <LifeBuoy />, href: "/dashboard/support" },
     { label: "Notifiche", icon: <Bell />, href: "/dashboard/notifications" },
+    { label: "Sistema", icon: <Server />, href: "/dashboard/system" },
     { label: "Impostazioni", icon: <Settings />, href: "/dashboard/settings" },
   ];
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { getStats } from "@/lib/api";
+import SystemStatusCard from "@/components/admin/SystemStatusCard";
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -55,6 +56,11 @@ export default function DashboardPage() {
           <Stat label="Ticket aperti" value={data?.tickets || "—"} />
         </div>
       )}
+
+      {/* Sistema Status */}
+      <div className="mt-8">
+        <SystemStatusCard />
+      </div>
 
       {/* Placeholder section */}
       <section className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-8">
