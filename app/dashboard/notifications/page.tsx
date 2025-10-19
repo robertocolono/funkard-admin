@@ -103,7 +103,7 @@ export default function NotificationsPage() {
     <div className="p-6 space-y-6">
       {/* FILTRI */}
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={filters.type} onValueChange={(v) => setFilters((f) => ({ ...f, type: v }))}>
+        <Select value={filters.type} onValueChange={(v) => setFilters((f: any) => ({ ...f, type: v }))}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
 
         <Select
           value={filters.priority}
-          onValueChange={(v) => setFilters((f) => ({ ...f, priority: v }))}
+          onValueChange={(v) => setFilters((f: any) => ({ ...f, priority: v }))}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Priorità" />
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
 
         <Select
           value={filters.state}
-          onValueChange={(v) => setFilters((f) => ({ ...f, state: v }))}
+          onValueChange={(v) => setFilters((f: any) => ({ ...f, state: v }))}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Stato" />
@@ -152,7 +152,7 @@ export default function NotificationsPage() {
           placeholder="Cerca titolo..."
           className="w-64"
           value={filters.q}
-          onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+          onChange={(e) => setFilters((f: any) => ({ ...f, q: e.target.value }))}
         />
 
         <Button onClick={load} disabled={loading}>

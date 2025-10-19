@@ -32,7 +32,7 @@ export default function ArchiveNotificationsPage() {
       try {
         // const data = await getArchivedNotifications();
         // Temporaneamente usa mock data
-        const data = [];
+        const data: any[] = [];
         setNotifications(data);
       } catch (err) {
         console.error("❌ Errore fetch archivio:", err);

@@ -102,6 +102,14 @@ export async function fetchSupportTickets(params?: Record<string, string>) {
   return handle<any>(res);
 }
 
+export async function getSupportTickets() {
+  const res = await fetch(`${BASE_URL}/api/support`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
 export async function fetchSupportTicketById(id: string) {
   const res = await fetch(`${BASE_URL}/api/support/${id}`, {
     headers: headers(),
@@ -130,9 +138,154 @@ export async function createSupportTicket(email: string, subject: string, messag
   return handle<any>(res);
 }
 
+// 🛒 MARKET FUNCTIONS
+export async function getMarketItem(id: string) {
+  const res = await fetch(`${BASE_URL}/api/market/${id}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function getPendingMarket() {
+  const res = await fetch(`${BASE_URL}/api/market/pending`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function getMarketItems() {
+  const res = await fetch(`${BASE_URL}/api/market`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function getItemDetails(id: string) {
+  const res = await fetch(`${BASE_URL}/api/market/${id}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function approveItem(id: string) {
+  const res = await fetch(`${BASE_URL}/api/market/${id}/approve`, {
+    method: 'POST',
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error('Impossibile approvare l\'item');
+  return handle<any>(res);
+}
+
+export async function rejectItem(id: string, reason?: string) {
+  const res = await fetch(`${BASE_URL}/api/market/${id}/reject`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) throw new Error('Impossibile rifiutare l\'item');
+  return handle<any>(res);
+}
+
+// 👥 USERS FUNCTIONS
+export async function getUsers() {
+  const res = await fetch(`${BASE_URL}/api/admin/users`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function updateUserStatus(id: string, status: string) {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${id}/status`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error('Impossibile aggiornare lo stato utente');
+  return handle<any>(res);
+}
+
+// ⚙️ SYSTEM FUNCTIONS
+export async function getSystemSettings() {
+  const res = await fetch(`${BASE_URL}/api/admin/settings`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+// 📊 NOTIFICATIONS FUNCTIONS
+export async function getRecentNotifications(limit: number = 5) {
+  const res = await fetch(`${BASE_URL}/api/admin/notifications/recent?limit=${limit}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function getUnreadCount() {
+  const res = await fetch(`${BASE_URL}/api/admin/notifications/unreadCount`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+// 🎫 TICKET FUNCTIONS
+export async function respondToTicket(id: string, message: string) {
+  const res = await fetch(`${BASE_URL}/api/support/${id}/respond`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) throw new Error('Impossibile rispondere al ticket');
+  return handle<any>(res);
+}
+
+export async function closeTicket(id: string) {
+  const res = await fetch(`${BASE_URL}/api/support/${id}/close`, {
+    method: 'POST',
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error('Impossibile chiudere il ticket');
+  return handle<any>(res);
+}
+
 // 🔄 COMPATIBILITÀ - Funzioni legacy per compatibilità
 export async function pingAPI() {
   return pingSystem();
+}
+
+// 🔧 GENERIC API FUNCTIONS
+export async function apiGet(url: string) {
+  const res = await fetch(`${BASE_URL}${url}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  return handle<any>(res);
+}
+
+export async function apiDelete(url: string) {
+  const res = await fetch(`${BASE_URL}${url}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error('Errore nella richiesta DELETE');
+  return handle<any>(res);
+}
+
+export async function apiPost(url: string, data?: any) {
+  const res = await fetch(`${BASE_URL}${url}`, {
+    method: 'POST',
+    headers: headers(),
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  if (!res.ok) throw new Error('Errore nella richiesta POST');
+  return handle<any>(res);
 }
 
 export async function getNotifications(filters?: {

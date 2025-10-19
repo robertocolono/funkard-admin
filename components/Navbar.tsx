@@ -3,7 +3,7 @@ import { useNotifications } from "@/lib/hooks/useNotifications";
 import AdminNotifications from "./AdminNotifications";
 
 export default function Navbar() {
-  const { isConnected } = useNotifications();
+  // const { isConnected } = useNotifications();
 
   return (
     <nav className="bg-zinc-900 border-b border-zinc-800 px-6 py-3 flex gap-6 text-sm items-center">
@@ -23,13 +23,13 @@ export default function Navbar() {
         <AdminNotifications />
       </div>
       
-      {/* Indicatore connessione SSE */}
-      <div className="flex items-center gap-2 ml-2">
+      {/* Indicatore connessione SSE - Temporaneamente disabilitato */}
+      {/* <div className="flex items-center gap-2 ml-2">
         <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
         <span className="text-xs text-gray-400">
           {isConnected ? 'Connesso' : 'Disconnesso'}
         </span>
-      </div>
+      </div> */}
     </nav>
   );
 }

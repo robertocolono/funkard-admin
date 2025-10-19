@@ -19,10 +19,13 @@ export default function SupportBadge() {
   }, [pathname]);
 
   // 🔸 SSE per notifiche support
-  useSSE(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/notifications/stream`, (notif) => {
-    if (notif.type === 'support_ticket' || notif.type === 'support_message') {
-      console.log('🔔 Nuova notifica support:', notif);
-      setCount((prev) => prev + 1);
+  useSSE({
+    url: `${process.env.NEXT_PUBLIC_API_BASE}/api/admin/notifications/stream`,
+    onMessage: (notif) => {
+      if (notif.type === 'support_ticket' || notif.type === 'support_message') {
+        console.log('🔔 Nuova notifica support:', notif);
+        setCount((prev) => prev + 1);
+      }
     }
   });
 

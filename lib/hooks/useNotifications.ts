@@ -82,7 +82,7 @@ export function useNotifications(filters?: NotificationFilters) {
   // Resolve notification
   const resolve = useCallback(async (id: number, note?: string) => {
     try {
-      await resolveNotification(id, note);
+      await resolveNotification(String(id), note);
       
       // Aggiorna stato locale
       setNotifications(prev => 
@@ -106,7 +106,7 @@ export function useNotifications(filters?: NotificationFilters) {
   // Archive notification
   const archive = useCallback(async (id: number, note?: string) => {
     try {
-      await archiveNotification(id, note);
+      await archiveNotification(String(id));
       
       // Rimuovi dalla lista locale
       setNotifications(prev => prev.filter(n => n.id !== id));

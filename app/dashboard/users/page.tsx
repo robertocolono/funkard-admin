@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { AdminUser } from "@/types/User";
 import { Users, Ban, Eye, UserMinus, Search, Activity, User as UserIcon, Mail, Phone, MapPin } from "lucide-react";
 import { mockActivities } from "@/lib/mockActivities";
+import { mockUsers } from "@/lib/mockUsers";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);

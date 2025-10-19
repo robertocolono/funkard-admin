@@ -5,12 +5,12 @@ import { Toaster } from "sonner";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
 import Navbar from "@/components/Navbar";
 import NotificationToast from "@/components/NotificationToast";
-import { useNotifications } from "@/lib/hooks/useNotifications";
+// import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
-  const { toastNotifications, removeToast } = useNotifications();
+  // const { toastNotifications, removeToast } = useNotifications();
 
       // Stream SSE globale per notifiche real-time
       useEffect(() => {
@@ -26,14 +26,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen">
           {children}
           
-          {/* Toast Notifications */}
-          {toastNotifications.map((notification) => (
+          {/* Toast Notifications - Temporaneamente disabilitato */}
+          {/* {toastNotifications.map((notification) => (
             <NotificationToast
               key={notification.id}
               notification={notification}
               onClose={() => removeToast(notification.id)}
             />
-          ))}
+          ))} */}
         </div>
         
             {/* Sonner Toaster */}

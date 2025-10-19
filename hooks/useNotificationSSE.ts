@@ -21,7 +21,7 @@ export function useNotifications() {
   const updateCountsAndNotifications = async () => {
     try {
       const data = await fetchNotifications();
-      const unread = data.filter(n => !n.readStatus).length;
+      const unread = data.filter((n: any) => !n.readStatus).length;
       setUnreadCount(unread);
       setRecentNotifications(data.slice(0, 5)); // Ultime 5
     } catch (error) {
