@@ -34,7 +34,6 @@ import {
   LockKeyhole,
   UnlockKeyhole,
   LockKeyholeOpen,
-  UnlockKeyholeOpen,
 } from "lucide-react"
 
 // Componente per gestione dell'accessibilità
