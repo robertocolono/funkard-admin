@@ -61,13 +61,7 @@ export async function cleanupArchived() {
   if (!res.ok) throw new Error('Cleanup fallito');
 }
 
-// 🧾 LOGS (placeholder, servirà dopo)
-export async function fetchAdminLogs() {
-  const res = await fetch(`${BASE_URL}/api/admin/logs`, {
-    headers: headers(),
-  });
-  return handle<any>(res);
-}
+// 🧾 LOGS (placeholder, servirà dopo) - RIMOSSO DUPLICATO
 
 // 🔍 CHECK SISTEMA
 export async function pingSystem() {
@@ -153,9 +147,7 @@ export async function markNotificationAsRead(id: number) {
   return markRead(String(id));
 }
 
-export async function archiveNotification(id: number, note?: string) {
-  return archiveNotification(String(id));
-}
+// RIMOSSO DUPLICATO - archiveNotification già definita sopra
 
 export async function cleanupArchivedNotifications(days: number = 30) {
   return cleanupArchived();

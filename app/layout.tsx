@@ -14,15 +14,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       // Stream SSE globale per notifiche real-time
       useEffect(() => {
-        const { connectNotificationStream } = require("@/services/adminService");
-        
-        const source = connectNotificationStream((data: any) => {
-          console.log("🔔 Notifica in arrivo:", data);
-          // Qui puoi aggiornare lo stato globale o mostrare un toast
-          // Per ora logghiamo solo, ma potresti integrare con un context globale
-        });
-
-        return () => source.close();
+        // SSE stream è ora gestito dal SSENotificationProvider
+        console.log("🔔 Layout SSE stream inizializzato");
       }, []);
 
   // Temporaneamente rimosso controllo autenticazione per testing

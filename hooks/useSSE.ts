@@ -110,6 +110,6 @@ export function useSSE({
 }
 
 // Hook semplificato per uso diretto
-export function useSSE(url: string, onMessage: (data: any) => void) {
+export function useSSESimple(url: string, onMessage: (data: any) => void) {
   return useSSE({ url, onMessage });
 }

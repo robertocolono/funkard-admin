@@ -94,7 +94,7 @@ export default function AdminLogsPage() {
             <SelectItem value="all">Tutte le azioni</SelectItem>
             {Object.keys(ACTION_COLOR).map((act) => (
               <SelectItem key={act} value={act}>
-                {act.replaceAll('_', ' ')}
+                {act.replace(/_/g, ' ')}
               </SelectItem>
             ))}
           </SelectContent>

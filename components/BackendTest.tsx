@@ -5,14 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  pingAdmin, 
-  getActiveNotifications, 
-  getArchivedNotifications,
-  getUsers,
-  getSupportTickets,
-  getMarketItems,
-  getSystemSettings
-} from "@/services/adminService";
+  pingSystem,
+  fetchNotifications,
+  fetchSupportTickets,
+  fetchAdminLogs
+} from "@/lib/api";
 import { CheckCircle, XCircle, Loader2, Database, Bell, Users, MessageSquare, ShoppingBag, Settings } from "lucide-react";
 
 interface TestResult {
@@ -27,13 +24,10 @@ export default function BackendTest() {
   const [loading, setLoading] = useState(false);
 
   const tests = [
-    { name: "Ping Admin", icon: Database, fn: pingAdmin },
-    { name: "Notifiche Attive", icon: Bell, fn: getActiveNotifications },
-    { name: "Notifiche Archiviate", icon: Bell, fn: getArchivedNotifications },
-    { name: "Utenti", icon: Users, fn: getUsers },
-    { name: "Ticket Supporto", icon: MessageSquare, fn: getSupportTickets },
-    { name: "Market Items", icon: ShoppingBag, fn: getMarketItems },
-    { name: "Impostazioni Sistema", icon: Settings, fn: getSystemSettings },
+    { name: "Ping Sistema", icon: Database, fn: pingSystem },
+    { name: "Notifiche", icon: Bell, fn: fetchNotifications },
+    { name: "Ticket Supporto", icon: MessageSquare, fn: fetchSupportTickets },
+    { name: "Logs Admin", icon: Settings, fn: fetchAdminLogs },
   ];
 
   const runTests = async () => {
