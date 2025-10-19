@@ -5,10 +5,12 @@ import { getCleanupLogs } from "@/lib/api/system";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useAdminHealth } from "@/providers/AdminHealthProvider";
 
 export default function SystemPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { lastResult } = useAdminHealth();
 
   useEffect(() => {
     getCleanupLogs()
@@ -20,13 +22,20 @@ export default function SystemPage() {
   if (loading) return <div className="p-6">Caricamento...</div>;
 
   const lastLog = logs[logs.length - 1];
-  const lastResult = lastLog?.result === "success" ? "✅ Tutto OK" : "⚠️ Errore";
+  const lastResultDisplay = lastLog?.result === "success" ? "✅ Tutto OK" : "⚠️ Errore";
   const lastDeleted = lastLog?.deleted ?? 0;
   const lastDate = lastLog ? new Date(lastLog.timestamp).toLocaleString() : "N/D";
 
   return (
     <div className="p-6 space-y-8">
       <h1 className="text-2xl font-semibold mb-4">🧹 Sistema & Cleanup</h1>
+
+      {/* Banner errore */}
+      {lastResult === "error" && (
+        <div className="bg-red-600/15 border border-red-600/40 text-red-300 px-4 py-3 rounded-xl">
+          ⚠️ Ultimo cleanup fallito. Verifica i log sotto.
+        </div>
+      )}
 
       {/* --- 🧭 Dashboard Stato --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -41,7 +50,7 @@ export default function SystemPage() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-sm text-gray-400">Stato sistema</p>
           <p className={`text-lg font-medium mt-1 ${lastLog?.result === "success" ? "text-green-400" : "text-red-400"}`}>
-            {lastResult}
+            {lastResultDisplay}
           </p>
         </div>
       </div>
