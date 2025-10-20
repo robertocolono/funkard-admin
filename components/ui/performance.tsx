@@ -11,7 +11,6 @@ import {
   Gauge, 
   Clock, 
   Timer, 
-  Speed, 
   TrendingUp, 
   TrendingDown, 
   Minus,
