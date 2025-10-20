@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
@@ -52,9 +53,12 @@ export function TicketTable({ tickets }: { tickets: Ticket[] }) {
                 </Badge>
               </td>
               <td className="px-4 py-3 text-right">
-                <button className="text-blue-600 hover:underline text-sm">
+                <Link 
+                  href={`/dashboard/support/${t.id}`}
+                  className="text-blue-600 hover:underline text-sm"
+                >
                   Dettagli
-                </button>
+                </Link>
               </td>
             </tr>
           ))}
