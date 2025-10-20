@@ -340,3 +340,20 @@ export function ResizeAnalytics({
     </div>
   )
 }
+
+// Componente Performance per analytics
+interface PerformanceProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function Performance({
+  children,
+  className
+}: PerformanceProps) {
+  return (
+    <div className={cn("performance-analytics", className)}>
+      {children}
+    </div>
+  )
+}
