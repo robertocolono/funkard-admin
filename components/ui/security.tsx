@@ -19,9 +19,9 @@ import {
   CheckCircle,
   XCircle,
   Info,
-  Warning,
-  Error,
-  Success
+  AlertTriangle,
+  CircleX,
+  CheckCircle2
 } from "lucide-react"
 
 // Componente per gestione della sicurezza
