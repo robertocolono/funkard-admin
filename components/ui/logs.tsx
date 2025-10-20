@@ -15,10 +15,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Info,
-  AlertTriangle,
-  Error,
-  CheckCircle2
+  Info
 } from "lucide-react"
 
 // Componente per gestione dei logs
