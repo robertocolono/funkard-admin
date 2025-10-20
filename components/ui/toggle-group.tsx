@@ -87,7 +87,9 @@ export function FunkardToggleGroup({
 }: FunkardToggleGroupProps) {
   return (
     <ToggleGroup
-      type={type}
+      {...(type === "single"
+        ? { type: "single" as const }
+        : { type: "multiple" as const })}
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
