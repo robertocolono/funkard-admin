@@ -357,3 +357,48 @@ export function Performance({
     </div>
   )
 }
+
+// Componenti placeholder per analytics
+export function Security({
+  children,
+  className
+}: { children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("security-analytics", className)}>
+      {children || <div>Security placeholder</div>}
+    </div>
+  )
+}
+
+export function Monitoring({
+  children,
+  className
+}: { children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("monitoring-analytics", className)}>
+      {children || <div>Monitoring placeholder</div>}
+    </div>
+  )
+}
+
+export function Logs({
+  children,
+  className
+}: { children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("logs-analytics", className)}>
+      {children || <div>Logs placeholder</div>}
+    </div>
+  )
+}
+
+export function Debug({
+  children,
+  className
+}: { children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("debug-analytics", className)}>
+      {children || <div>Debug placeholder</div>}
+    </div>
+  )
+}
