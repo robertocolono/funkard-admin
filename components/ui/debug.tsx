@@ -17,7 +17,6 @@ import {
   XCircle,
   Info,
   CircleX,
-  CheckCircle2,
   Code,
   Terminal,
   Settings,
