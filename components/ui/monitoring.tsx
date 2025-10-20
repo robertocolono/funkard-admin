@@ -15,7 +15,7 @@ import {
   XCircle,
   Info,
   AlertTriangle,
-  CircleX,
+  Error,
   CheckCircle2,
   TrendingUp,
   TrendingDown,

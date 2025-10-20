@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   Info,
-  Error,
+  CircleX,
   Code,
   Terminal,
   Settings,

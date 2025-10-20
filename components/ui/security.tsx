@@ -20,7 +20,7 @@ import {
   XCircle,
   Info,
   AlertTriangle,
-  CircleX,
+  Error,
   CheckCircle2
 } from "lucide-react"
 

@@ -217,7 +217,7 @@ export function Suspense({
         </Card>
       )}
 
-      {/* CircleX Details */}
+      {/* Error Details */}
       {state.status === "error" && (
         <Card>
           <CardHeader>
@@ -341,7 +341,7 @@ export function LoadingSpinner({
 interface ErrorBoundaryProps {
   children: React.ReactNode
   fallback?: React.ReactNode
-  onError?: (error: CircleX, errorInfo: React.ErrorInfo) => void
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
 }
 
 export function ErrorBoundary({
@@ -350,7 +350,7 @@ export function ErrorBoundary({
   onError
 }: ErrorBoundaryProps) {
   const [hasError, setHasError] = React.useState(false)
-  const [error, setError] = React.useState<CircleX | null>(null)
+  const [error, setError] = React.useState<Error | null>(null)
 
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {

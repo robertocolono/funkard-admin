@@ -355,8 +355,8 @@ export function ErrorBoundary({
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       setHasError(true)
-      setError(new CircleX(event.message))
-      onError?.(new CircleX(event.message), {
+      setError(new Error(event.message))
+      onError?.(new Error(event.message), {
         componentStack: event.filename || "Unknown"
       })
     }

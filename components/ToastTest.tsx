@@ -103,7 +103,7 @@ export default function ToastTest() {
           onClick={showErrorToast}
           className="bg-red-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-700 transition-colors"
         >
-          ❌ CircleX
+          ❌ Error
         </button>
         
         <button
