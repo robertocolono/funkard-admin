@@ -24,9 +24,8 @@ import {
   CheckCircle,
   XCircle,
   Info,
-  Warning,
-  Error,
-  Success
+  X,
+  AlertCircle
 } from "lucide-react"
 
 // Componente per card dashboard accattivanti
