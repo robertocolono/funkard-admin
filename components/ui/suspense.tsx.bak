@@ -10,7 +10,7 @@ import {
   Loader2, 
   Clock, 
   AlertTriangle, 
-  CheckCircle, 
+  CheckCircle2, 
   XCircle,
   RefreshCw,
   Pause,
@@ -60,7 +60,7 @@ export function Suspense({
     switch (status) {
       case "idle": return <Clock className="h-4 w-4 text-gray-500" />
       case "loading": return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
-      case "success": return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "success": return <CheckCircle2 className="h-4 w-4 text-green-500" />
       case "error": return <XCircle className="h-4 w-4 text-red-500" />
       case "timeout": return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       default: return <Clock className="h-4 w-4 text-gray-500" />
@@ -217,7 +217,7 @@ export function Suspense({
         </Card>
       )}
 
-      {/* Error Details */}
+      {/* CircleX Details */}
       {state.status === "error" && (
         <Card>
           <CardHeader>
@@ -261,12 +261,12 @@ export function Suspense({
         </Card>
       )}
 
-      {/* Success Details */}
+      {/* CheckCircle2 Details */}
       {state.status === "success" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
               <span>Operazione Completata</span>
             </CardTitle>
             <CardDescription>
@@ -341,7 +341,7 @@ export function LoadingSpinner({
 interface ErrorBoundaryProps {
   children: React.ReactNode
   fallback?: React.ReactNode
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
+  onError?: (error: CircleX, errorInfo: React.ErrorInfo) => void
 }
 
 export function ErrorBoundary({
@@ -350,13 +350,13 @@ export function ErrorBoundary({
   onError
 }: ErrorBoundaryProps) {
   const [hasError, setHasError] = React.useState(false)
-  const [error, setError] = React.useState<Error | null>(null)
+  const [error, setError] = React.useState<CircleX | null>(null)
 
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       setHasError(true)
-      setError(new Error(event.message))
-      onError?.(new Error(event.message), {
+      setError(new CircleX(event.message))
+      onError?.(new CircleX(event.message), {
         componentStack: event.filename || "Unknown"
       })
     }

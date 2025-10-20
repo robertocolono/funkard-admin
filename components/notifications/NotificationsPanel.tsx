@@ -22,7 +22,7 @@ export default function NotificationsPanel() {
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/notifications`);
-      if (!res.ok) throw new CircleX("Errore nel caricamento notifiche");
+      if (!res.ok) throw new Error("Errore nel caricamento notifiche");
       const data = await res.json();
       setNotifications(data);
     } catch (err) {
@@ -40,7 +40,7 @@ export default function NotificationsPanel() {
           "Authorization": `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`
         }
       });
-      if (!res.ok) throw new CircleX("Errore durante l'archiviazione");
+      if (!res.ok) throw new Error("Errore durante l'archiviazione");
       toast({ title: "Notifica archiviata", description: "La notifica è stata spostata nell'archivio." });
       setNotifications(prev => prev.filter((n: any) => n.id !== id));
     } catch (err) {
@@ -58,7 +58,7 @@ export default function NotificationsPanel() {
           "Authorization": `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
         },
       });
-      if (!res.ok) throw new CircleX("Errore eliminazione archiviate");
+      if (!res.ok) throw new Error("Errore eliminazione archiviate");
       toast({ title: "Archivio pulito", description: "Le notifiche archiviate sono state eliminate." });
       await fetchNotifications(); // ricarica lista
     } catch (err) {
