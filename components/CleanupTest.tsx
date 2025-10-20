@@ -32,7 +32,7 @@ export default function CleanupTest() {
         setError(data.error || 'Errore durante il test');
       }
     } catch (err) {
-      setError(err instanceof CircleX ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
     } finally {
       setLoading(false);
     }

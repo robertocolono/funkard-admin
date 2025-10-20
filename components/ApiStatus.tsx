@@ -21,7 +21,7 @@ export default function ApiStatus() {
       setLastCheck(new Date());
     } catch (err) {
       setStatus("error");
-      setError(err instanceof CircleX ? err.message : "Errore di connessione");
+      setError(err instanceof Error ? err.message : "Errore di connessione");
       setLastCheck(new Date());
     }
   };
