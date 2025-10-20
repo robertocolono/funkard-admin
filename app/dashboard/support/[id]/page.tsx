@@ -1,83 +1,100 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Loader2, MessageSquare } from "lucide-react"
+import { Loader2, Send, XCircle } from "lucide-react"
 
-const mockTickets = [
-  {
-    id: 1,
-    user: "mario.rossi",
-    subject: "Problema login",
-    date: "2025-10-18",
-    status: "open",
-    messages: [
-      { from: "utente", text: "Non riesco ad accedere al mio account.", date: "2025-10-18 14:22" },
-      { from: "admin", text: "Hai provato a resettare la password?", date: "2025-10-18 15:01" },
-    ],
-  },
-  {
-    id: 2,
-    user: "luca.bianchi",
-    subject: "Errore pagamento",
-    date: "2025-10-17",
-    status: "in_progress",
-    messages: [
-      { from: "utente", text: "Il pagamento con carta fallisce sempre.", date: "2025-10-17 11:10" },
-      { from: "admin", text: "Verifica che la carta sia abilitata per e-commerce.", date: "2025-10-17 12:44" },
-    ],
-  },
-  {
-    id: 3,
-    user: "anna.verdi",
-    subject: "Richiesta rimborso",
-    date: "2025-10-15",
-    status: "closed",
-    messages: [
-      { from: "utente", text: "Vorrei richiedere un rimborso per l'ordine #12345.", date: "2025-10-15 09:30" },
-      { from: "admin", text: "Ho verificato l'ordine e procedo con il rimborso.", date: "2025-10-15 10:15" },
-      { from: "admin", text: "Rimborso processato con successo. Arriverà in 3-5 giorni lavorativi.", date: "2025-10-15 10:45" },
-    ],
-  },
-  {
-    id: 4,
-    user: "giulia.neri",
-    subject: "Verifica account",
-    date: "2025-10-14",
-    status: "open",
-    messages: [
-      { from: "utente", text: "Il mio account non è stato verificato dopo 24 ore.", date: "2025-10-14 16:20" },
-    ],
-  },
-  {
-    id: 5,
-    user: "stefano.moro",
-    subject: "Bug sezione collezione",
-    date: "2025-10-12",
-    status: "in_progress",
-    messages: [
-      { from: "utente", text: "La sezione collezione non carica le immagini.", date: "2025-10-12 14:30" },
-      { from: "admin", text: "Sto investigando il problema. Puoi inviarmi uno screenshot?", date: "2025-10-12 15:00" },
-      { from: "utente", text: "Ecco lo screenshot allegato.", date: "2025-10-12 15:15" },
-      { from: "admin", text: "Grazie, ho identificato il problema. La fix sarà disponibile domani.", date: "2025-10-12 16:30" },
-    ],
-  },
-]
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://funkard-backend.onrender.com"
+
+interface Message {
+  from: "user" | "admin"
+  text: string
+  date: string
+}
+
+interface Ticket {
+  id: number
+  userEmail: string
+  subject: string
+  category: string
+  priority: string
+  status: string
+  createdAt: string
+  messages: Message[]
+}
 
 export default function TicketDetailPage() {
-  const router = useRouter()
   const { id } = useParams()
-  const [ticket, setTicket] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [ticket, setTicket] = useState<Ticket | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [reply, setReply] = useState("")
+  const [sending, setSending] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchTicket = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`${API_BASE}/api/support/${id}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+        },
+      })
+      if (!res.ok) throw new Error("Errore nel caricamento del ticket")
+      const data = await res.json()
+      setTicket(data)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReply = async () => {
+    if (!reply.trim()) return
+    try {
+      setSending(true)
+      const res = await fetch(`${API_BASE}/api/admin/support/reply/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+        },
+        body: JSON.stringify({ message: reply }),
+      })
+      if (!res.ok) throw new Error("Errore nell'invio della risposta")
+      setReply("")
+      await fetchTicket() // ricarica i messaggi aggiornati
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleClose = async () => {
+    try {
+      setClosing(true)
+      const res = await fetch(`${API_BASE}/api/admin/support/close/${id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+        },
+      })
+      if (!res.ok) throw new Error("Errore nella chiusura del ticket")
+      await fetchTicket() // aggiorna stato
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setClosing(false)
+    }
+  }
 
   useEffect(() => {
-    const found = mockTickets.find((t) => t.id === Number(id))
-    setTimeout(() => {
-      setTicket(found)
-      setLoading(false)
-    }, 400)
+    fetchTicket()
   }, [id])
 
   if (loading) {
@@ -89,86 +106,102 @@ export default function TicketDetailPage() {
     )
   }
 
-  if (!ticket) {
+  if (error) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Ticket non trovato</h2>
-        <p className="text-gray-500 mb-4">Il ticket richiesto non esiste o è stato rimosso.</p>
-        <Button onClick={() => router.back()} className="gap-2">
-          <ArrowLeft size={16} /> Torna alla lista
-        </Button>
+      <div className="p-6 text-red-600 bg-red-50 rounded-md border border-red-200">
+        {error}
       </div>
     )
   }
 
+  if (!ticket) return null
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-semibold">Ticket #{ticket.id}</h1>
-          <p className="text-sm text-gray-500">Utente: {ticket.user}</p>
+          <h1 className="text-2xl font-semibold mb-1">{ticket.subject}</h1>
+          <div className="text-sm text-gray-500">
+            {ticket.userEmail} •{" "}
+            {new Date(ticket.createdAt).toLocaleString("it-IT")}
+          </div>
         </div>
-        <Button variant="outline" onClick={() => router.back()} className="gap-2">
-          <ArrowLeft size={16} /> Indietro
-        </Button>
+
+        <div className="flex gap-2">
+          <Badge>{ticket.category}</Badge>
+          <Badge
+            className={`${
+              ticket.priority === "urgent"
+                ? "bg-red-100 text-red-800"
+                : ticket.priority === "high"
+                ? "bg-orange-100 text-orange-800"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {ticket.priority}
+          </Badge>
+          <Badge
+            className={`${
+              ticket.status === "open"
+                ? "bg-blue-100 text-blue-800"
+                : ticket.status === "in_progress"
+                ? "bg-yellow-100 text-yellow-800"
+                : ticket.status === "resolved"
+                ? "bg-green-100 text-green-800"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            {ticket.status}
+          </Badge>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Badge
-          className={`capitalize ${
-            ticket.status === "open"
-              ? "bg-blue-100 text-blue-800"
-              : ticket.status === "in_progress"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-green-100 text-green-800"
-          }`}
-        >
-          {ticket.status === "open"
-            ? "Aperto"
-            : ticket.status === "in_progress"
-            ? "In corso"
-            : "Risolto"}
-        </Badge>
-        <span className="text-sm text-gray-500">Creato il {ticket.date}</span>
-      </div>
-
-      <div className="border rounded-lg bg-white p-4 space-y-3">
-        <h2 className="text-lg font-medium flex items-center gap-2">
-          <MessageSquare size={18} />
-          Conversazione
-        </h2>
-
-        <div className="space-y-3">
-          {ticket.messages.map((m: any, idx: number) => (
-            <div
-              key={idx}
-              className={`p-3 rounded-lg ${
-                m.from === "admin"
-                  ? "bg-gray-50 border border-gray-200"
-                  : "bg-blue-50 border border-blue-100"
-              }`}
-            >
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium">{m.from === "admin" ? "Admin" : ticket.user}</span>
-                <span className="text-gray-400">{m.date}</span>
-              </div>
-              <p className="text-gray-700">{m.text}</p>
+      <div className="border rounded-lg bg-white shadow-sm p-4 space-y-4 max-h-[500px] overflow-y-auto">
+        {ticket.messages.map((m, i) => (
+          <div
+            key={i}
+            className={`p-3 rounded-lg max-w-[80%] ${
+              m.from === "admin"
+                ? "ml-auto bg-blue-50 border border-blue-100 text-right"
+                : "bg-gray-50 border border-gray-200 text-left"
+            }`}
+          >
+            <div className="text-sm">{m.text}</div>
+            <div className="text-xs text-gray-400 mt-1">
+              {new Date(m.date).toLocaleString("it-IT")}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      <div className="border-t pt-4">
-        <h3 className="text-sm font-medium mb-2">Rispondi</h3>
-        <textarea
-          placeholder="Scrivi una risposta..."
-          className="w-full border rounded-md p-3 text-sm resize-none focus:ring-2 focus:ring-black outline-none"
-          rows={4}
-        />
-        <div className="flex justify-end mt-2">
-          <Button>Invia risposta</Button>
+      {ticket.status !== "closed" && (
+        <div className="space-y-3">
+          <Textarea
+            placeholder="Scrivi una risposta..."
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+          />
+          <div className="flex justify-between">
+            <Button
+              onClick={handleReply}
+              disabled={sending}
+              className="flex items-center gap-2"
+            >
+              {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+              Invia risposta
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClose}
+              disabled={closing}
+              className="flex items-center gap-2"
+            >
+              {closing ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />}
+              Chiudi Ticket
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
