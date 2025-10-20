@@ -35,6 +35,7 @@ export default function AdminSupportChatPage() {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [wsConnected, setWsConnected] = useState(false)
+  const [stompClient, setStompClient] = useState<Client | null>(null)
 
   const fetchTicket = async () => {
     try {
@@ -52,22 +53,18 @@ export default function AdminSupportChatPage() {
   }
 
   const sendReply = async () => {
-    if (!reply.trim()) return
+    if (!reply.trim() || !stompClient || !wsConnected) return
     setSending(true)
     try {
-      const res = await fetch(`${API_BASE}/api/admin/support/reply/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-        },
-        body: JSON.stringify({ content: reply }),
+      // Invia messaggio via WebSocket
+      stompClient.publish({
+        destination: `/app/support/${id}/send`,
+        body: JSON.stringify({ sender: 'admin', content: reply }),
       })
-      if (!res.ok) throw new Error('Errore invio messaggio')
       setReply('')
-      await fetchTicket()
+      console.log('Message sent via WebSocket:', { sender: 'admin', content: reply })
     } catch (err) {
-      console.error(err)
+      console.error('WebSocket send error:', err)
       alert('Errore durante l'invio della risposta')
     } finally {
       setSending(false)
@@ -120,9 +117,11 @@ export default function AdminSupportChatPage() {
     })
 
     client.activate()
+    setStompClient(client)
 
     return () => {
       client.deactivate()
+      setStompClient(null)
     }
   }, [id])
 
@@ -213,8 +212,9 @@ export default function AdminSupportChatPage() {
         />
         <Button
           onClick={sendReply}
-          disabled={sending || !reply.trim()}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg"
+          disabled={sending || !reply.trim() || !wsConnected}
+          className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg disabled:opacity-50"
+          title={!wsConnected ? 'Connessione WebSocket non disponibile' : ''}
         >
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </Button>
