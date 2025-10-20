@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Loader2, ArrowLeft, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
+import SockJS from 'sockjs-client'
+import { Client } from '@stomp/stompjs'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://funkard-backend.onrender.com'
 
@@ -32,6 +34,7 @@ export default function AdminSupportChatPage() {
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
+  const [wsConnected, setWsConnected] = useState(false)
 
   const fetchTicket = async () => {
     try {
@@ -87,8 +90,40 @@ export default function AdminSupportChatPage() {
 
   useEffect(() => {
     fetchTicket()
-    const interval = setInterval(fetchTicket, 15000)
-    return () => clearInterval(interval)
+    
+    // WebSocket per messaggi real-time
+    const socket = new SockJS(`${process.env.NEXT_PUBLIC_API_URL}/ws`)
+    const client = new Client({
+      webSocketFactory: () => socket as any,
+      debug: () => {},
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('WebSocket connected for ticket:', id)
+        setWsConnected(true)
+        client.subscribe(`/topic/support/${id}`, (message) => {
+          const msg = JSON.parse(message.body)
+          console.log('New message received:', msg)
+          setTicket((prev) =>
+            prev
+              ? { ...prev, messages: [...prev.messages, msg] }
+              : prev
+          )
+        })
+      },
+      onDisconnect: () => {
+        console.log('WebSocket disconnected')
+        setWsConnected(false)
+      },
+      onStompError: (error) => {
+        console.error('STOMP error:', error)
+      }
+    })
+
+    client.activate()
+
+    return () => {
+      client.deactivate()
+    }
   }, [id])
 
   if (loading) {
@@ -119,6 +154,7 @@ export default function AdminSupportChatPage() {
             <h1 className="font-semibold">{ticket.subject}</h1>
             <p className="text-xs text-gray-400">
               {ticket.userEmail} • {ticket.category} • Priorità: {ticket.priority}
+              {wsConnected && <span className="ml-2 text-green-400">● Live</span>}
             </p>
           </div>
         </div>
