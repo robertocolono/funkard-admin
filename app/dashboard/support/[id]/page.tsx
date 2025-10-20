@@ -1,24 +1,23 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, Send, XCircle } from "lucide-react"
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Loader2, ArrowLeft, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://funkard-backend.onrender.com"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://funkard-backend.onrender.com'
 
 interface Message {
-  from: "user" | "admin"
-  text: string
-  date: string
+  id: number
+  sender: string
+  content: string
+  createdAt: string
 }
 
 interface Ticket {
   id: number
-  userEmail: string
   subject: string
+  userEmail: string
   category: string
   priority: string
   status: string
@@ -26,182 +25,164 @@ interface Ticket {
   messages: Message[]
 }
 
-export default function TicketDetailPage() {
+export default function AdminSupportChatPage() {
   const { id } = useParams()
+  const router = useRouter()
   const [ticket, setTicket] = useState<Ticket | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [reply, setReply] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
-  const [closing, setClosing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const fetchTicket = async () => {
     try {
-      setLoading(true)
-      const res = await fetch(`${API_BASE}/api/support/${id}`, {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-        },
+      const res = await fetch(`${API_BASE}/api/admin/support/tickets/${id}`, {
+        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}` },
       })
-      if (!res.ok) throw new Error("Errore nel caricamento del ticket")
+      if (!res.ok) throw new Error('Errore nel caricamento del ticket')
       const data = await res.json()
       setTicket(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleReply = async () => {
+  const sendReply = async () => {
     if (!reply.trim()) return
+    setSending(true)
     try {
-      setSending(true)
       const res = await fetch(`${API_BASE}/api/admin/support/reply/${id}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
         },
-        body: JSON.stringify({ message: reply }),
+        body: JSON.stringify({ content: reply }),
       })
-      if (!res.ok) throw new Error("Errore nell'invio della risposta")
-      setReply("")
-      await fetchTicket() // ricarica i messaggi aggiornati
-    } catch (err: any) {
-      setError(err.message)
+      if (!res.ok) throw new Error('Errore invio messaggio')
+      setReply('')
+      await fetchTicket()
+    } catch (err) {
+      console.error(err)
+      alert('Errore durante l'invio della risposta')
     } finally {
       setSending(false)
     }
   }
 
-  const handleClose = async () => {
+  const closeTicket = async () => {
+    if (!confirm('Vuoi chiudere definitivamente questo ticket?')) return
     try {
-      setClosing(true)
       const res = await fetch(`${API_BASE}/api/admin/support/close/${id}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-        },
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}` },
       })
-      if (!res.ok) throw new Error("Errore nella chiusura del ticket")
-      await fetchTicket() // aggiorna stato
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setClosing(false)
+      if (!res.ok) throw new Error('Errore nella chiusura del ticket')
+      await fetchTicket()
+    } catch (err) {
+      alert('Errore durante la chiusura del ticket')
     }
   }
 
   useEffect(() => {
     fetchTicket()
+    const interval = setInterval(fetchTicket, 15000)
+    return () => clearInterval(interval)
   }, [id])
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64 text-gray-500">
-        <Loader2 className="animate-spin mr-2" size={18} />
-        Caricamento ticket...
+      <div className="flex h-screen items-center justify-center text-gray-400 bg-zinc-950">
+        <Loader2 className="animate-spin mr-2" /> Caricamento ticket...
       </div>
     )
   }
 
-  if (error) {
+  if (!ticket) {
     return (
-      <div className="p-6 text-red-600 bg-red-50 rounded-md border border-red-200">
-        {error}
+      <div className="flex h-screen items-center justify-center bg-zinc-950 text-gray-400">
+        Ticket non trovato
       </div>
     )
   }
-
-  if (!ticket) return null
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-semibold mb-1">{ticket.subject}</h1>
-          <div className="text-sm text-gray-500">
-            {ticket.userEmail} •{" "}
-            {new Date(ticket.createdAt).toLocaleString("it-IT")}
+    <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4 bg-zinc-900">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={() => router.push('/dashboard/support')}>
+            <ArrowLeft size={18} className="text-gray-400" />
+          </Button>
+          <div>
+            <h1 className="font-semibold">{ticket.subject}</h1>
+            <p className="text-xs text-gray-400">
+              {ticket.userEmail} • {ticket.category} • Priorità: {ticket.priority}
+            </p>
           </div>
         </div>
-
         <div className="flex gap-2">
-          <Badge>{ticket.category}</Badge>
-          <Badge
-            className={`${
-              ticket.priority === "urgent"
-                ? "bg-red-100 text-red-800"
-                : ticket.priority === "high"
-                ? "bg-orange-100 text-orange-800"
-                : "bg-gray-100 text-gray-700"
-            }`}
+          <Button
+            onClick={closeTicket}
+            className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
           >
-            {ticket.priority}
-          </Badge>
-          <Badge
-            className={`${
-              ticket.status === "open"
-                ? "bg-blue-100 text-blue-800"
-                : ticket.status === "in_progress"
-                ? "bg-yellow-100 text-yellow-800"
-                : ticket.status === "resolved"
-                ? "bg-green-100 text-green-800"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            {ticket.status}
-          </Badge>
+            <CheckCircle2 size={16} />
+            Chiudi ticket
+          </Button>
         </div>
       </div>
 
-      <div className="border rounded-lg bg-white shadow-sm p-4 space-y-4 max-h-[500px] overflow-y-auto">
-        {ticket.messages.map((m, i) => (
-          <div
-            key={i}
-            className={`p-3 rounded-lg max-w-[80%] ${
-              m.from === "admin"
-                ? "ml-auto bg-blue-50 border border-blue-100 text-right"
-                : "bg-gray-50 border border-gray-200 text-left"
-            }`}
-          >
-            <div className="text-sm">{m.text}</div>
-            <div className="text-xs text-gray-400 mt-1">
-              {new Date(m.date).toLocaleString("it-IT")}
+      {/* Chat */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {ticket.messages.length === 0 ? (
+          <p className="text-gray-500 text-center">Nessun messaggio ancora.</p>
+        ) : (
+          ticket.messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${
+                msg.sender === 'admin' ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              <div
+                className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
+                  msg.sender === 'admin'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-zinc-800 text-gray-100 border border-zinc-700'
+                }`}
+              >
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                <span className="text-xs text-gray-400 block mt-1">
+                  {new Date(msg.createdAt).toLocaleTimeString('it-IT', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
-      {ticket.status !== "closed" && (
-        <div className="space-y-3">
-          <Textarea
-            placeholder="Scrivi una risposta..."
-            value={reply}
-            onChange={(e) => setReply(e.target.value)}
-          />
-          <div className="flex justify-between">
-            <Button
-              onClick={handleReply}
-              disabled={sending}
-              className="flex items-center gap-2"
-            >
-              {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-              Invia risposta
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClose}
-              disabled={closing}
-              className="flex items-center gap-2"
-            >
-              {closing ? <Loader2 className="animate-spin" size={16} /> : <XCircle size={16} />}
-              Chiudi Ticket
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Footer */}
+      <div className="border-t border-zinc-800 bg-zinc-900 p-4 flex gap-3 items-center">
+        <input
+          type="text"
+          placeholder="Scrivi una risposta..."
+          value={reply}
+          onChange={(e) => setReply(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendReply()}
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+        />
+        <Button
+          onClick={sendReply}
+          disabled={sending || !reply.trim()}
+          className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg"
+        >
+          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+        </Button>
+      </div>
     </div>
   )
 }
