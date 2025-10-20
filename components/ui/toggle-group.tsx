@@ -85,13 +85,29 @@ export function FunkardToggleGroup({
   disabled = false,
   className
 }: FunkardToggleGroupProps) {
+  if (type === "single") {
+    return (
+      <ToggleGroup
+        type="single"
+        value={value as string | undefined}
+        onValueChange={onValueChange as (value: string) => void}
+        disabled={disabled}
+        className={cn(
+          "gap-1",
+          "data-[disabled]:opacity-50 data-[disabled]:pointer-events-none",
+          className
+        )}
+      >
+        {children}
+      </ToggleGroup>
+    )
+  }
+
   return (
     <ToggleGroup
-      {...(type === "single"
-        ? { type: "single" as const }
-        : { type: "multiple" as const })}
-      value={value}
-      onValueChange={onValueChange}
+      type="multiple"
+      value={value as string[] | undefined}
+      onValueChange={onValueChange as (value: string[]) => void}
       disabled={disabled}
       className={cn(
         "gap-1",
