@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  CheckCircle2, 
+  CheckCircle, 
   Archive, 
   Trash2, 
   RefreshCw,
@@ -105,7 +105,7 @@ export default function NotificationsActions({
           disabled={isLoading || unreadCount === 0}
           className="flex items-center gap-2 text-xs"
         >
-          <CheckCircle2 className="h-3 w-3" />
+          <CheckCircle className="h-3 w-3" />
           Segna tutte lette
         </Button>
 

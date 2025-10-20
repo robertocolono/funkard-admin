@@ -17,7 +17,7 @@ type AdminNotification = {
   productId?: string;
   userId?: string;
 };
-import { Loader2, CheckCircle2, Bell } from "lucide-react";
+import { Loader2, CheckCircle, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -93,7 +93,7 @@ export default function AdminNotificationList() {
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4 mr-1 text-green-600" />
+                  <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
                   Risolvi
                 </>
               )}

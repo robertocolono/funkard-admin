@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { Trash2, RefreshCw, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 
 interface SystemStatus {
   result: string;
@@ -53,7 +53,7 @@ export default function SystemStatusCard({ className = "", showActions = true }:
   const getStatusIcon = (result: string) => {
     switch (result) {
       case "success":
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case "error":
         return <AlertTriangle className="w-4 h-4 text-red-600" />;
       default:

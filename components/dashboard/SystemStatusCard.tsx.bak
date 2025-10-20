@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
   Server, 
   Database, 
-  CheckCircle2, 
+  CheckCircle, 
   AlertTriangle, 
   Clock,
   RefreshCw
@@ -62,7 +62,7 @@ export default function SystemStatusCard() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "online":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case "offline":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:

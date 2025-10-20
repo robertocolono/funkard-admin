@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Circle, ArrowRight, ArrowLeft } from "lucide-react"
+import { CheckCircle, Circle, ArrowRight, ArrowLeft } from "lucide-react"
 
 interface WizardStep {
   id: string
@@ -82,7 +82,7 @@ export function Wizard({
                       )}
                     >
                       {status === "completed" ? (
-                        <CheckCircle2 className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                       ) : (
                         <span>{index + 1}</span>
                       )}

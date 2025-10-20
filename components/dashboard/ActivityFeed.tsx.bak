@@ -8,7 +8,7 @@ import {
   Settings, 
   Shield, 
   Clock,
-  CheckCircle2,
+  CheckCircle,
   AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +103,7 @@ export default function ActivityFeed() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "success":
-        return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+        return <CheckCircle className="h-3 w-3 text-green-500" />;
       case "warning":
         return <AlertTriangle className="h-3 w-3 text-yellow-500" />;
       case "error":

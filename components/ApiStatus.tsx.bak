@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, Wifi, WifiOff } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Wifi, WifiOff } from "lucide-react";
 import { pingAPI } from "@/lib/api";
 
 export default function ApiStatus() {
@@ -21,7 +21,7 @@ export default function ApiStatus() {
       setLastCheck(new Date());
     } catch (err) {
       setStatus("error");
-      setError(err instanceof CircleX ? err.message : "Errore di connessione");
+      setError(err instanceof Error ? err.message : "Errore di connessione");
       setLastCheck(new Date());
     }
   };
@@ -39,7 +39,7 @@ export default function ApiStatus() {
       case "checking":
         return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
       case "connected":
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "error":
         return <XCircle className="w-4 h-4 text-red-500" />;
     }

@@ -89,21 +89,21 @@ export default function ToastTest() {
           onClick={showSuccessToast}
           className="bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700 transition-colors"
         >
-          ✅ CheckCircle2
+          ✅ Success
         </button>
         
         <button
           onClick={showWarningToast}
           className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-yellow-700 transition-colors"
         >
-          ⚠️ AlertTriangle
+          ⚠️ Warning
         </button>
         
         <button
           onClick={showErrorToast}
           className="bg-red-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-700 transition-colors"
         >
-          ❌ CircleX
+          ❌ Error
         </button>
         
         <button
