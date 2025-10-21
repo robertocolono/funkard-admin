@@ -98,13 +98,26 @@ export default function AdminSupportChatPage() {
         console.log('WebSocket connected for ticket:', id)
         setWsConnected(true)
         client.subscribe(`/topic/support/${id}`, (message) => {
-          const msg = JSON.parse(message.body)
-          console.log('New message received:', msg)
-          setTicket((prev) =>
-            prev
-              ? { ...prev, messages: [...prev.messages, msg] }
-              : prev
-          )
+          const data = JSON.parse(message.body)
+          console.log('WebSocket data received:', data)
+
+          if (data.content) {
+            // È un messaggio di chat (SupportMessageDTO)
+            console.log('New chat message:', data)
+            setTicket((prev) =>
+              prev
+                ? { ...prev, messages: [...prev.messages, data] }
+                : prev
+            )
+          } else {
+            // È un aggiornamento del ticket (TicketDTO)
+            console.log('Ticket update:', data)
+            setTicket((prev) =>
+              prev
+                ? { ...prev, ...data }
+                : prev
+            )
+          }
         })
       },
       onDisconnect: () => {
