@@ -42,35 +42,55 @@ export function useTickets(initialFilters?: Filters) {
   }, [filters]);
 
   useEffect(() => {
+    // Richiedi permessi notifiche desktop
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     loadTickets();
 
     // Polling fallback ogni 30s
     const interval = setInterval(loadTickets, 30000);
 
     // 🔥 Connessione SSE
-    const token = localStorage.getItem('funkard_token');
     const eventSource = new EventSource(
-      `${process.env.NEXT_PUBLIC_API_URL}/admin/support/stream?token=${token}`
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/support/stream`
     );
 
     eventSource.addEventListener('ticket-update', (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('📡 SSE Event received:', data);
+        
         if (data.type === 'NEW_TICKET') {
           console.log('🎫 Nuovo ticket:', data);
           loadTickets(); // aggiorna lista
-          // opzionale: mostra toast visivo
+          
+          // Notifica desktop se permesso
           if (Notification.permission === 'granted') {
-            new Notification(`Nuovo ticket: ${data.subject}`);
+            new Notification(`Nuovo ticket: ${data.subject}`, {
+              body: `Da: ${data.email}`,
+              icon: '/favicon.ico'
+            });
           }
+        } else if (data.type === 'TICKET_UPDATED') {
+          console.log('📝 Ticket aggiornato:', data);
+          loadTickets(); // aggiorna lista
+        } else if (data.type === 'TICKET_CLOSED') {
+          console.log('🔒 Ticket chiuso:', data);
+          loadTickets(); // aggiorna lista
         }
       } catch (err) {
-        console.error('Errore evento SSE:', err);
+        console.error('Errore parsing evento SSE:', err);
       }
     });
 
-    eventSource.onerror = () => {
-      console.warn('SSE disconnesso, tentativo di riconnessione...');
+    eventSource.onopen = () => {
+      console.log('🔗 SSE connesso al backend');
+    };
+
+    eventSource.onerror = (error) => {
+      console.warn('❌ SSE disconnesso, tentativo di riconnessione...', error);
       eventSource.close();
     };
 
