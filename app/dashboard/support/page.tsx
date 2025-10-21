@@ -1,6 +1,7 @@
 'use client';
 
 import { useTickets } from '@/hooks/useTickets';
+import { TicketRow } from '@/components/support/TicketRow';
 import Link from 'next/link';
 import { MessageSquare, RefreshCw, Filter, Search } from 'lucide-react';
 
@@ -128,56 +129,11 @@ export default function SupportDashboardPage() {
         ) : (
           <div className="space-y-3">
             {tickets.map((ticket) => (
-              <Link
-                key={ticket.id}
-                href={`/dashboard/support/${ticket.id}`}
-                className="block bg-zinc-900 border border-zinc-800 hover:border-yellow-500/40 rounded-xl p-4 transition-all duration-200 hover:bg-zinc-800/50"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-white">{ticket.subject}</h3>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          ticket.priority === 'URGENT'
-                            ? 'bg-red-500/20 text-red-400'
-                            : ticket.priority === 'HIGH'
-                            ? 'bg-orange-500/20 text-orange-400'
-                            : ticket.priority === 'NORMAL'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-gray-500/20 text-gray-400'
-                        }`}
-                      >
-                        {ticket.priority}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-400 mb-1">{ticket.email}</p>
-                    <p className="text-xs text-gray-500">
-                      {ticket.category} • {new Date(ticket.createdAt).toLocaleString('it-IT')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                        ticket.status === 'NEW'
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : ticket.status === 'IN_PROGRESS'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : ticket.status === 'RESOLVED'
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-gray-500/20 text-gray-400'
-                      }`}
-                    >
-                      {ticket.status}
-                    </span>
-                    {ticket.assignedTo && (
-                      <span className="text-xs text-gray-500">
-                        Assegnato a {ticket.assignedTo}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              <TicketRow 
+                key={ticket.id} 
+                ticket={ticket} 
+                onUpdate={reload}
+              />
             ))}
           </div>
         )}
