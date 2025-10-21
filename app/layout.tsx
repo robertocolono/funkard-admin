@@ -7,6 +7,8 @@ import { Toaster as HotToaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToast from "@/components/NotificationToast";
 import { useSupportStream } from "@/hooks/useSupportStream";
+import { useAdminSupportEvents } from "@/hooks/useAdminSupportEvents";
+import { useAuth } from "@/hooks/useAuth";
 // import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -16,6 +18,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Inizializza SSE stream globale per notifiche real-time
   useSupportStream();
+
+  // Inizializza SSE per admin support events
+  const { admin } = useAuth();
+  useAdminSupportEvents(admin);
 
       // Stream SSE globale per notifiche real-time
       useEffect(() => {
