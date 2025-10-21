@@ -66,3 +66,34 @@ export async function closeTicket(id: string) {
   if (!res.ok) throw new Error('Errore chiusura ticket');
   return res.json();
 }
+
+/**
+ * 📋 Recupera tutti i ticket (admin)
+ * GET /api/admin/support/tickets
+ * Supporta filtri opzionali via query string
+ * es: ?status=OPEN&priority=HIGH
+ */
+export async function fetchAllTickets(filters?: {
+  status?: string;
+  priority?: string;
+  category?: string;
+  search?: string;
+}) {
+  const token = localStorage.getItem('funkard_token');
+
+  const params = new URLSearchParams();
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.priority) params.append('priority', filters.priority);
+  if (filters?.category) params.append('category', filters.category);
+  if (filters?.search) params.append('search', filters.search);
+
+  const res = await fetch(`${API_BASE}/admin/support/tickets?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) throw new Error('Errore caricamento lista ticket');
+  return res.json();
+}
