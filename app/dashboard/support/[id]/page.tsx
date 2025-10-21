@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2, ArrowLeft, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
 import SockJS from 'sockjs-client'
 import { Client } from '@stomp/stompjs'
+import { toast } from 'sonner'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://funkard-backend.onrender.com'
 
@@ -101,7 +102,34 @@ export default function AdminSupportChatPage() {
           const data = JSON.parse(message.body)
           console.log('WebSocket data received:', data)
 
-          if (data.content) {
+          if (data.event === "CLOSED") {
+            // Evento di chiusura ticket
+            console.log('Ticket closed event:', data)
+            toast(`🔒 Ticket "${data.subject}" chiuso e archiviato`)
+            setTicket((prev) =>
+              prev
+                ? { ...prev, status: 'closed', ...data }
+                : prev
+            )
+          } else if (data.event === "STATUS_CHANGED") {
+            // Evento di cambio stato
+            console.log('Ticket status changed:', data)
+            toast(`📝 Ticket "${data.subject}" - Stato aggiornato a ${data.status}`)
+            setTicket((prev) =>
+              prev
+                ? { ...prev, status: data.status, ...data }
+                : prev
+            )
+          } else if (data.event === "PRIORITY_CHANGED") {
+            // Evento di cambio priorità
+            console.log('Ticket priority changed:', data)
+            toast(`⚡ Ticket "${data.subject}" - Priorità aggiornata a ${data.priority}`)
+            setTicket((prev) =>
+              prev
+                ? { ...prev, priority: data.priority, ...data }
+                : prev
+            )
+          } else if (data.content) {
             // È un messaggio di chat (SupportMessageDTO)
             console.log('New chat message:', data)
             setTicket((prev) =>
