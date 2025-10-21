@@ -1,55 +1,51 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useSSE } from '@/hooks/useSSE';
-import { cn } from '@/lib/utils';
-import { LifeBuoy } from 'lucide-react';
+import { useEffect, useState } from 'react'
 
-export default function SupportBadge() {
-  const [count, setCount] = useState(0);
-  const pathname = usePathname();
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://funkard-backend.onrender.com'
 
-  // 🔸 Reset badge se l'admin apre la pagina support
+interface SupportBadgeProps {
+  className?: string
+}
+
+export default function SupportBadge({ className = '' }: SupportBadgeProps) {
+  const [newTicketsCount, setNewTicketsCount] = useState(0)
+
   useEffect(() => {
-    if (pathname?.includes('/dashboard/support')) {
-      setCount(0);
-    }
-  }, [pathname]);
-
-  // 🔸 SSE per notifiche support
-  useSSE({
-    url: `${process.env.NEXT_PUBLIC_API_BASE}/api/admin/notifications/stream`,
-    onMessage: (notif) => {
-      if (notif.type === 'support_ticket' || notif.type === 'support_message') {
-        console.log('🔔 Nuova notifica support:', notif);
-        setCount((prev) => prev + 1);
+    const pollNewTickets = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/support/tickets`, {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+          },
+        })
+        if (!res.ok) return
+        
+        const data = await res.json()
+        
+        // Trova nuovi messaggi o ticket non letti
+        const newOnes = data.filter((ticket: any) => 
+          ticket.status === 'NEW' || ticket.status === 'open'
+        )
+        
+        setNewTicketsCount(newOnes.length)
+      } catch (e) {
+        console.error('Polling support badge error', e)
       }
     }
-  });
+
+    // Polling ogni 10 secondi per il badge (meno frequente)
+    const interval = setInterval(pollNewTickets, 10000)
+    pollNewTickets() // Chiamata iniziale
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  if (newTicketsCount === 0) return null
 
   return (
-    <Link
-      href="/dashboard/support"
-      className={cn(
-        'relative flex items-center justify-between px-4 py-2 rounded-lg transition',
-        pathname?.includes('/dashboard/support')
-          ? 'bg-yellow-400 text-black font-medium'
-          : 'hover:bg-zinc-800 text-gray-300 hover:text-white'
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <span className="w-5 h-5">
-          <LifeBuoy />
-        </span>
-        <span>Support</span>
-      </div>
-      {count > 0 && (
-        <span className="ml-auto bg-orange-600 text-white text-xs rounded-full px-2 py-0.5 animate-pulse">
-          {count}
-        </span>
-      )}
-    </Link>
-  );
+    <span className={`absolute -top-1 -right-2 bg-yellow-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${className}`}>
+      {newTicketsCount}
+    </span>
+  )
 }

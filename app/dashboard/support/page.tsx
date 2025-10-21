@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Search, ArrowUpDown } from "lucide-react"
+import { toast } from "sonner"
 import SupportStats from "./stats"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://funkard-backend.onrender.com"
@@ -27,6 +28,7 @@ export default function SupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [newTicketsCount, setNewTicketsCount] = useState(0)
 
   // Legge i parametri dall'URL
   const [search, setSearch] = useState(searchParams.get("search") || "")
@@ -79,6 +81,50 @@ export default function SupportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, status, priority, category, sort])
 
+  // Polling per nuovi ticket
+  useEffect(() => {
+    const pollNewTickets = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/support/tickets`, {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+          },
+        })
+        if (!res.ok) return
+        
+        const data = await res.json()
+        
+        // Trova nuovi messaggi o ticket non letti
+        const newOnes = data.filter((ticket: Ticket) => 
+          ticket.status === 'NEW' || ticket.status === 'open'
+        )
+        
+        if (newOnes.length > 0) {
+          toast(`📨 ${newOnes.length} nuovo/i ticket o risposta utente`, {
+            style: { background: '#1a1a1a', color: '#fff' },
+          })
+          
+          // Suono notifica (se disponibile)
+          try {
+            const sound = new Audio('/sounds/admin-notification.mp3')
+            sound.volume = 0.4
+            sound.play().catch(() => {})
+          } catch (e) {
+            console.log('Audio notification not available')
+          }
+        }
+        
+        setNewTicketsCount(newOnes.length)
+        setTickets(data)
+      } catch (e) {
+        console.error('Polling admin error', e)
+      }
+    }
+
+    const interval = setInterval(pollNewTickets, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div className="space-y-8">
       {/* STATISTICHE */}
@@ -87,7 +133,14 @@ export default function SupportPage() {
       {/* HEADER E CONTROLLI */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Ticket di Supporto</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">Ticket di Supporto</h1>
+            {newTicketsCount > 0 && (
+              <span className="bg-yellow-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                {newTicketsCount}
+              </span>
+            )}
+          </div>
           <Button onClick={fetchTickets} variant="outline" className="gap-2">
             <Loader2 size={16} className={loading ? "animate-spin" : ""} />
             Aggiorna
