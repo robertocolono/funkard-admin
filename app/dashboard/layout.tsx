@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -13,11 +14,53 @@ import {
   Bell,
   Store,
   Shield,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import NotificationDrawer from '@/components/admin/NotificationDrawer';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [role, setRole] = useState<string>('guest');
+  const [sseStatus, setSseStatus] = useState<'online' | 'offline'>('offline');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedRole = localStorage.getItem('funkard_admin_role') || 'guest';
+      setRole(storedRole);
+
+      // Connessione SSE test
+      const adminId = localStorage.getItem('funkard_admin_id') || 'test';
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/support/stream?userId=${adminId}&role=${storedRole}`;
+      const es = new EventSource(url);
+
+      setSseStatus('online');
+
+      es.onmessage = () => {
+        setSseStatus('online');
+      };
+
+      es.onerror = () => {
+        setSseStatus('offline');
+      };
+
+      const timer = setInterval(() => {
+        if (es.readyState === EventSource.CLOSED) setSseStatus('offline');
+      }, 30000);
+
+      return () => {
+        es.close();
+        clearInterval(timer);
+      };
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('funkard_admin_token');
+    localStorage.removeItem('funkard_admin_role');
+    localStorage.removeItem('funkard_admin_id');
+    window.location.href = '/login';
+  };
 
   const links = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -57,11 +100,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-neutral-800 p-3">
           <button
-            onClick={() => {
-              localStorage.removeItem('funkard_admin_token');
-              localStorage.removeItem('isLoggedIn');
-              window.location.href = '/login';
-            }}
+            onClick={handleLogout}
             className="flex w-full items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors"
           >
             <LogOut size={16} />
@@ -88,6 +127,34 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Role + SSE Status */}
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-neutral-800 border border-neutral-700">
+              <Shield size={14} className="text-yellow-500" />
+              <span
+                className={`uppercase font-medium ${
+                  role === 'super_admin'
+                    ? 'text-yellow-400'
+                    : role === 'admin'
+                    ? 'text-blue-400'
+                    : role === 'support'
+                    ? 'text-green-400'
+                    : 'text-gray-500'
+                }`}
+              >
+                {role}
+              </span>
+
+              {sseStatus === 'online' ? (
+                <div className="flex items-center text-green-400 text-xs gap-1">
+                  <Wifi size={12} /> Online
+                </div>
+              ) : (
+                <div className="flex items-center text-red-400 text-xs gap-1">
+                  <WifiOff size={12} /> Offline
+                </div>
+              )}
+            </div>
+
             {/* Notifiche Drawer */}
             <NotificationDrawer />
           </div>
