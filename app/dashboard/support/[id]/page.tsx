@@ -1,224 +1,423 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { fetchTicketById, replyToTicket, assignTicket, closeTicket } from '@/lib/funkardApi';
+import { useToast } from '@/components/ui/use-toast';
+import { useSession } from '@/lib/useSession';
 import { cn } from '@/lib/utils';
-
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  createdAt: string;
-  fromAdmin: boolean;
-}
-
-interface Ticket {
-  id: string;
-  subject: string;
-  category: string;
-  priority: string;
-  status: string;
-  email: string;
-  assignedTo?: string | null;
-  locked: boolean;
-  messages: Message[];
-  createdAt: string;
-}
+import { MessageSquare, User, Clock, Tag, AlertCircle, Send, Lock, Unlock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function TicketDetailPage() {
-  const params = useParams();
-  const ticketId = params?.id as string;
-
-  const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | null>(null);
+  const { id } = useParams();
+  const { toast } = useToast();
+  const { user } = useSession();
+  const [ticket, setTicket] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  /** ✅ Carica il ticket */
-  const loadTicket = useCallback(async () => {
+  const loadTicket = async () => {
     try {
-      const data = await fetchTicketById(ticketId);
-      setTicket(data);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/${id}`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+      
+      if (!res.ok) {
+        throw new Error('Errore nel caricamento ticket');
+      }
+      
+      const data = await res.json();
+      setTicket(data.ticket);
+      setMessages(data.messages || []);
     } catch (err) {
-      console.error('Errore caricamento ticket', err);
+      console.error('Errore loadTicket:', err);
+      toast({ 
+        title: 'Errore nel caricamento ticket', 
+        description: 'Impossibile caricare i dettagli del ticket',
+        variant: 'destructive' 
+      });
     } finally {
       setLoading(false);
     }
-  }, [ticketId]);
+  };
 
-  /** 📡 Invia un messaggio */
-  const handleReply = async () => {
-    if (!newMessage.trim()) return;
+  const sendReply = async () => {
+    if (!reply.trim() || sending) return;
+    
     setSending(true);
     try {
-      await replyToTicket(ticketId, newMessage);
-      setNewMessage('');
-      await loadTicket();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/reply/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ message: reply }),
+      });
+      
+      if (res.ok) {
+        setReply('');
+        await loadTicket();
+        toast({ 
+          title: 'Messaggio inviato ✅', 
+          description: 'Il messaggio è stato inviato all\'utente'
+        });
+      } else {
+        throw new Error('Errore nell\'invio del messaggio');
+      }
     } catch (err) {
-      alert('Errore invio messaggio');
+      console.error('Errore sendReply:', err);
+      toast({ 
+        title: 'Errore durante l\'invio', 
+        description: 'Impossibile inviare il messaggio',
+        variant: 'destructive' 
+      });
     } finally {
       setSending(false);
     }
   };
 
-  /** 🧩 Prendi in carico ticket */
   const handleAssign = async () => {
+    if (assigning) return;
+    
+    setAssigning(true);
     try {
-      const email = localStorage.getItem('funkard_admin_email');
-      if (!email) return alert('Email admin non trovata.');
-      await assignTicket(ticketId, email);
-      await loadTicket();
-    } catch {
-      alert('Errore assegnazione ticket');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/assign/${id}`, {
+        method: 'POST',
+        headers: { 
+          Authorization: `Bearer ${user?.token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      if (res.ok) {
+        await loadTicket();
+        toast({ 
+          title: '🎧 Ticket preso in carico', 
+          description: 'Hai preso in carico questo ticket'
+        });
+      } else {
+        throw new Error('Errore nell\'assegnazione');
+      }
+    } catch (err) {
+      console.error('Errore handleAssign:', err);
+      toast({ 
+        title: 'Errore nell\'assegnazione', 
+        description: 'Impossibile prendere in carico il ticket',
+        variant: 'destructive' 
+      });
+    } finally {
+      setAssigning(false);
     }
   };
 
-  /** ✅ Chiudi ticket */
-  const handleClose = async () => {
-    if (!confirm('Sei sicuro di voler chiudere questo ticket?')) return;
+  const handleUnassign = async () => {
+    if (assigning) return;
+    
+    setAssigning(true);
     try {
-      await closeTicket(ticketId);
-      await loadTicket();
-    } catch {
-      alert('Errore chiusura ticket');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/unassign/${id}`, {
+        method: 'POST',
+        headers: { 
+          Authorization: `Bearer ${user?.token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      if (res.ok) {
+        await loadTicket();
+        toast({ 
+          title: '🔓 Ticket rilasciato', 
+          description: 'Il ticket è tornato disponibile'
+        });
+      } else {
+        throw new Error('Errore nel rilascio');
+      }
+    } catch (err) {
+      console.error('Errore handleUnassign:', err);
+      toast({ 
+        title: 'Errore nel rilascio', 
+        description: 'Impossibile rilasciare il ticket',
+        variant: 'destructive' 
+      });
+    } finally {
+      setAssigning(false);
     }
   };
 
-  /** 🔐 Recupera ruolo admin */
+  // Auto-scroll in fondo
   useEffect(() => {
-    const storedRole = localStorage.getItem('funkard_role') as
-      | 'SUPER_ADMIN'
-      | 'ADMIN'
-      | 'SUPPORT'
-      | null;
-    setRole(storedRole);
-    loadTicket();
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-    // Polling aggiornamenti
-    const interval = setInterval(loadTicket, 7000);
-    return () => clearInterval(interval);
-  }, [loadTicket]);
+  // SSE per aggiornamenti in tempo reale
+  useEffect(() => {
+    const es = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/stream`);
+    
+    es.addEventListener('ticket-update', async (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.ticketId === parseInt(id as string)) {
+          console.log('📡 Ticket aggiornato via SSE:', data);
+          await loadTicket();
+          
+          // Notifiche specifiche per tipo di evento
+          if (data.type === 'NEW_MESSAGE') {
+            toast({
+              title: '💬 Nuovo messaggio',
+              description: `Nuovo messaggio da ${data.from || 'utente'}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Errore parsing SSE:', err);
+      }
+    });
 
-  if (loading)
+    es.addEventListener('ping', () => {
+      console.log('🔄 SSE keep-alive ricevuto');
+    });
+
+    es.onopen = () => {
+      console.log('🔗 SSE connesso per ticket:', id);
+    };
+
+    es.onerror = (error) => {
+      console.warn('⚠️ SSE disconnesso per ticket:', error);
+    };
+
+    return () => {
+      console.log('🔌 SSE disconnesso per ticket:', id);
+      es.close();
+    };
+  }, [id, toast]);
+
+  useEffect(() => {
+    if (user?.token) {
+      loadTicket();
+    }
+  }, [id, user?.token]);
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'new': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'in_progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'resolved': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'closed': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgent': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  if (loading || !ticket) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-950 text-gray-400">
-        Caricamento ticket...
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Caricamento ticket...</p>
+        </div>
       </div>
     );
+  }
 
-  if (!ticket)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-400">
-        Ticket non trovato.
-      </div>
-    );
-
-  const isAssignedToMe =
-    ticket.assignedTo &&
-    ticket.assignedTo === localStorage.getItem('funkard_admin_email');
-
-  const canReply =
-    role === 'SUPER_ADMIN' || (role === 'SUPPORT' && isAssignedToMe);
+  const canManageTicket = user?.role === 'SUPER_ADMIN' || user?.role === 'SUPPORT';
+  const isAssignedToMe = ticket.assignedTo === user?.email;
+  const isLockedByOther = ticket.locked && !isAssignedToMe;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* HEADER */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{ticket.subject}</h1>
-            <p className="text-gray-400 text-sm">
-              Ticket #{ticket.id} • {ticket.category} • Priorità:{' '}
-              <span className="text-yellow-400 font-semibold">{ticket.priority}</span>
-            </p>
-            <p className="text-gray-500 text-xs mt-1">
-              Creato il {new Date(ticket.createdAt).toLocaleString('it-IT')}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                'px-3 py-1 rounded-full text-xs font-semibold uppercase',
-                ticket.status === 'OPEN' && 'bg-green-500/20 text-green-400',
-                ticket.status === 'IN_PROGRESS' && 'bg-yellow-500/20 text-yellow-400',
-                ticket.status === 'RESOLVED' && 'bg-blue-500/20 text-blue-400',
-                ticket.status === 'CLOSED' && 'bg-gray-600/20 text-gray-400'
-              )}
-            >
-              {ticket.status}
-            </span>
-
-            {role === 'SUPPORT' && !ticket.assignedTo && (
-              <button
-                onClick={handleAssign}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg text-sm font-semibold"
-              >
-                Prendi in carico
-              </button>
-            )}
-
-            {role === 'SUPER_ADMIN' && (
-              <button
-                onClick={handleClose}
-                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-semibold"
-              >
-                Chiudi Ticket
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* CHAT */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-h-[70vh] overflow-y-auto space-y-4">
-          {ticket.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                'p-3 rounded-lg w-fit max-w-[80%]',
-                msg.fromAdmin
-                  ? 'bg-yellow-500/20 text-yellow-100 self-end ml-auto'
-                  : 'bg-zinc-800 text-gray-200'
-              )}
-            >
-              <p className="text-sm">{msg.content}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {msg.fromAdmin ? 'Staff' : ticket.email} •{' '}
-                {new Date(msg.createdAt).toLocaleTimeString('it-IT')}
-              </p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <h1 className="text-2xl font-bold text-white">{ticket.subject}</h1>
+                <Badge className={cn("px-3 py-1 text-xs font-semibold", getStatusColor(ticket.status))}>
+                  {ticket.status}
+                </Badge>
+                <Badge className={cn("px-3 py-1 text-xs font-semibold", getPriorityColor(ticket.priority))}>
+                  {ticket.priority}
+                </Badge>
+                {ticket.locked && (
+                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1 text-xs font-semibold flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    Bloccato
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span>{ticket.email}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  <span>{ticket.category}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{new Date(ticket.createdAt).toLocaleString('it-IT')}</span>
+                </div>
+                {ticket.assignedTo && (
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Assegnato a {ticket.assignedTo}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
+
+            {/* AZIONI */}
+            {canManageTicket && (
+              <div className="flex gap-3">
+                {!ticket.locked ? (
+                  <Button
+                    onClick={handleAssign}
+                    disabled={assigning}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+                  >
+                    {assigning ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                    {assigning ? 'Assegnando...' : 'Prendi in carico'}
+                  </Button>
+                ) : isAssignedToMe ? (
+                  <Button
+                    onClick={handleUnassign}
+                    disabled={assigning}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+                  >
+                    {assigning ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <Unlock className="w-4 h-4" />
+                    )}
+                    {assigning ? 'Rilasciando...' : 'Rilascia'}
+                  </Button>
+                ) : (
+                  <div className="text-sm text-gray-400 flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    <span>In carico a {ticket.assignedTo}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* BOX MESSAGGIO */}
-        {canReply && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex gap-3">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Scrivi una risposta..."
-              className="flex-1 bg-zinc-800 text-white p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:outline-none min-h-[80px]"
-            />
-            <button
-              onClick={handleReply}
-              disabled={sending}
-              className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-500/50 text-black font-semibold px-6 rounded-lg transition-colors"
-            >
-              {sending ? 'Invio...' : 'Invia'}
-            </button>
+        {/* CHAT MESSAGGI */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="w-5 h-5 text-yellow-500" />
+            <h2 className="text-lg font-semibold">Conversazione</h2>
+          </div>
+          
+          <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-4 h-[50vh] overflow-y-auto space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                <p>Nessun messaggio ancora</p>
+                <p className="text-sm">Inizia la conversazione con l'utente</p>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    'max-w-[80%] p-4 rounded-lg',
+                    msg.fromAdmin
+                      ? 'ml-auto bg-yellow-500 text-black'
+                      : 'mr-auto bg-zinc-800 text-gray-100'
+                  )}
+                >
+                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {new Date(msg.createdAt).toLocaleString('it-IT')}
+                    {msg.fromAdmin && (
+                      <span className="ml-2 text-yellow-600 font-semibold">Admin</span>
+                    )}
+                  </p>
+                </div>
+              ))
+            )}
+            <div ref={bottomRef} />
+          </div>
+        </div>
+
+        {/* INPUT MESSAGGIO */}
+        {ticket.locked && isAssignedToMe && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendReply()}
+                placeholder="Scrivi un messaggio all'utente..."
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                disabled={sending}
+              />
+              <Button
+                onClick={sendReply}
+                disabled={!reply.trim() || sending}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
+              >
+                {sending ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {sending ? 'Invio...' : 'Invia'}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Premi Invio per inviare il messaggio
+            </p>
           </div>
         )}
 
-        {!canReply && (
-          <p className="text-gray-500 text-sm italic text-center">
-            {ticket.assignedTo
-              ? ticket.assignedTo === localStorage.getItem('funkard_admin_email')
-                ? 'Ticket assegnato a te.'
-                : `Ticket gestito da ${ticket.assignedTo}.`
-              : 'Ticket non ancora preso in carico.'}
-          </p>
+        {/* INFO AGGIUNTIVE */}
+        {!ticket.locked && (
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-blue-300">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm font-medium">Ticket non assegnato</span>
+            </div>
+            <p className="text-xs mt-1">
+              Prendi in carico questo ticket per iniziare a rispondere all'utente
+            </p>
+          </div>
+        )}
+
+        {isLockedByOther && (
+          <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 text-orange-300">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              <span className="text-sm font-medium">Ticket assegnato ad altro support</span>
+            </div>
+            <p className="text-xs mt-1">
+              Questo ticket è attualmente gestito da {ticket.assignedTo}
+            </p>
+          </div>
         )}
       </div>
     </div>
