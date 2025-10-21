@@ -52,7 +52,7 @@ export default function AdminSupportChatPage() {
     }
   }
 
-  const sendReply = async () => {
+  const handleReply = async () => {
     if (!reply.trim() || !stompClient || !wsConnected) return
     setSending(true)
     try {
@@ -71,7 +71,7 @@ export default function AdminSupportChatPage() {
     }
   }
 
-  const closeTicket = async () => {
+  const handleClose = async () => {
     if (!confirm('Vuoi chiudere definitivamente questo ticket?')) return
     try {
       const res = await fetch(`${API_BASE}/api/admin/support/close/${id}`, {
@@ -172,7 +172,7 @@ export default function AdminSupportChatPage() {
         </div>
         <div className="flex gap-2">
           <Button
-            onClick={closeTicket}
+            onClick={handleClose}
             className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
           >
             <CheckCircle2 size={16} />
@@ -220,11 +220,11 @@ export default function AdminSupportChatPage() {
           placeholder="Scrivi una risposta..."
           value={reply}
           onChange={(e) => setReply(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendReply()}
+          onKeyDown={(e) => e.key === 'Enter' && handleReply()}
           className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
         />
         <Button
-          onClick={sendReply}
+          onClick={handleReply}
           disabled={sending || !reply.trim() || !wsConnected}
           className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg disabled:opacity-50"
           title={!wsConnected ? 'Connessione WebSocket non disponibile' : ''}
