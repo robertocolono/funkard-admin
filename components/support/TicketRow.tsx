@@ -8,13 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { User, Lock, Unlock, MessageSquare, ExternalLink } from 'lucide-react';
 
 interface Ticket {
-  id: number;
+  id: string;
   subject: string;
   email: string;
   status: string;
   priority: string;
   category: string;
-  locked: boolean;
+  locked?: boolean;
   assignedTo?: string;
   createdAt: string;
 }

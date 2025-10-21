@@ -38,7 +38,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "🆕 Nuovo ticket aperto",
             description: `${data.subject} — da ${data.email}`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -61,7 +60,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "💬 Nuova risposta da utente",
             description: `Ticket #${data.ticketId} (${data.subject})`,
-            duration: 4000,
           });
         }
       } catch (error) {
@@ -83,7 +81,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "🎯 Ticket assegnato",
             description: `Ticket #${data.id} → assegnato a ${data.assignedToName || data.assignedTo}`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -101,7 +98,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "🔓 Ticket rilasciato",
             description: `Ticket #${data.id} è tornato disponibile`,
-            duration: 4000,
           });
         }
       } catch (error) {
@@ -123,7 +119,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "✅ Ticket risolto",
             description: `#${data.id} ora è chiuso.`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -145,7 +140,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
           toast({
             title: "📬 Stato ticket aggiornato",
             description: `Ticket #${data.id} ora è ${data.status}`,
-            duration: 4000,
           });
         }
       } catch (error) {
@@ -164,7 +158,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
         toast({
           title: "🛠 Evento di sistema",
           description: data.message,
-          duration: 6000,
         });
       } catch (error) {
         console.error('Errore parsing system-event:', error);
@@ -209,7 +202,6 @@ export function useAdminSupportEvents(admin: AdminUser | null) {
             toast({
               title: "🆕 Nuovo ticket aperto",
               description: `${data.subject} — da ${data.email}`,
-              duration: 5000,
             });
           }
         } catch (error) {

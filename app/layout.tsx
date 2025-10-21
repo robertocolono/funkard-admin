@@ -38,48 +38,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <NotificationProvider>
           <div className="min-h-screen">
             {children}
-          
-          {/* Toast Notifications - Temporaneamente disabilitato */}
-          {/* {toastNotifications.map((notification) => (
-            <NotificationToast
-              key={notification.id}
-              notification={notification}
-              onClose={() => removeToast(notification.id)}
-            />
-          ))} */}
-        </div>
-        
-            {/* Sonner Toaster */}
-            <Toaster
-              position="bottom-right"
-              theme="light"
-              richColors
-              toastOptions={{
-                style: {
-                  background: "#ffffff",
-                  color: "#000",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px"
-                },
-              }}
-            />
             
-            {/* ShadCN Toast Toaster */}
-            <ToastToaster />
-            
-            {/* React Hot Toast Toaster */}
-            <HotToaster 
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#1a1a1a',
-                  color: '#fff',
-                  border: '1px solid #333',
-                },
-              }}
-            />
+            {/* Toast Notifications - Temporaneamente disabilitato */}
+            {/* {toastNotifications.map((notification) => (
+              <NotificationToast
+                key={notification.id}
+                notification={notification}
+                onClose={() => removeToast(notification.id)}
+              />
+            ))} */}
           </div>
+          
+          {/* Sonner Toaster */}
+          <Toaster
+            position="bottom-right"
+            theme="light"
+            richColors
+            toastOptions={{
+              style: {
+                background: "#ffffff",
+                color: "#000",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px"
+              },
+            }}
+          />
+          
+          {/* ShadCN Toast Toaster */}
+          <ToastToaster />
+          
+          {/* React Hot Toast Toaster */}
+          <HotToaster 
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#1a1a1a',
+                color: '#fff',
+                border: '1px solid #333',
+              },
+            }}
+          />
         </NotificationProvider>
       </body>
     </html>

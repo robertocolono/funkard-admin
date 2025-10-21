@@ -62,7 +62,6 @@ export function ToastTestPanel() {
                 toast({
                   title: toastData.title,
                   description: toastData.description,
-                  duration: 4000,
                 });
               }}
               className="h-auto p-4 flex flex-col items-start gap-2 text-left"

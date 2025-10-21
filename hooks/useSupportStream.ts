@@ -25,7 +25,6 @@ export function useSupportStream() {
             toast({
               title: '🎫 Nuovo ticket ricevuto',
               description: `#${data.id} - ${data.subject} da ${data.email}`,
-              duration: 5000,
             });
             reloadTickets();
             break;
@@ -40,7 +39,6 @@ export function useSupportStream() {
               toast({
                 title: '💬 Nuovo messaggio',
                 description: `Ticket #${data.ticketId} - ${data.sender}: ${data.preview || 'Nuovo messaggio ricevuto'}`,
-                duration: 4000,
               });
             }
             reloadTickets();
@@ -52,13 +50,11 @@ export function useSupportStream() {
               toast({
                 title: '🎧 Ticket assegnato a te',
                 description: `Hai preso in carico il ticket #${data.id} - ${data.subject}`,
-                duration: 5000,
               });
             } else if (user?.role === 'SUPER_ADMIN') {
               toast({
                 title: '🎧 Ticket assegnato',
                 description: `Ticket #${data.id} assegnato a ${data.assignedTo}`,
-                duration: 4000,
               });
             }
             reloadTickets();
@@ -69,7 +65,6 @@ export function useSupportStream() {
               toast({
                 title: '🔓 Ticket rilasciato',
                 description: `Ticket #${data.id} è tornato disponibile`,
-                duration: 4000,
               });
             }
             reloadTickets();
@@ -81,7 +76,6 @@ export function useSupportStream() {
               toast({
                 title: '✅ Ticket risolto',
                 description: `Ticket #${data.id} - ${data.subject} è stato chiuso`,
-                duration: 5000,
               });
             }
             reloadTickets();
@@ -93,7 +87,6 @@ export function useSupportStream() {
               toast({
                 title: '📬 Ticket aggiornato',
                 description: `Ticket #${data.id} ora è ${data.status.toLowerCase()}`,
-                duration: 4000,
               });
             }
             reloadTickets();
@@ -105,7 +98,6 @@ export function useSupportStream() {
               toast({
                 title: '⚡ Priorità cambiata',
                 description: `Ticket #${data.id} ora ha priorità ${data.priority}`,
-                duration: 4000,
               });
             }
             reloadTickets();

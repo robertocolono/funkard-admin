@@ -38,7 +38,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
                 toast({
                   title: '💬 Nuovo messaggio nel ticket',
                   description: `#${ticketId} - ${data.sender}: ${data.preview || 'Nuovo messaggio'}`,
-                  duration: 4000,
                 });
               }
               onMessageUpdate?.(data);
@@ -49,7 +48,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
                 toast({
                   title: '🎧 Ticket assegnato a te',
                   description: `Hai preso in carico il ticket #${ticketId}`,
-                  duration: 5000,
                 });
               }
               onTicketUpdate?.(data);
@@ -59,7 +57,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
               toast({
                 title: '🔓 Ticket rilasciato',
                 description: `Ticket #${ticketId} è tornato disponibile`,
-                duration: 4000,
               });
               onTicketUpdate?.(data);
               break;
@@ -68,7 +65,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
               toast({
                 title: '✅ Ticket risolto',
                 description: `Ticket #${ticketId} è stato chiuso`,
-                duration: 5000,
               });
               onTicketUpdate?.(data);
               break;
@@ -77,7 +73,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
               toast({
                 title: '📬 Stato ticket aggiornato',
                 description: `Ticket #${ticketId} ora è ${data.status.toLowerCase()}`,
-                duration: 4000,
               });
               onTicketUpdate?.(data);
               break;
@@ -86,7 +81,6 @@ export function useTicketSSE({ ticketId, onTicketUpdate, onMessageUpdate }: UseT
               toast({
                 title: '⚡ Priorità aggiornata',
                 description: `Ticket #${ticketId} ora ha priorità ${data.priority}`,
-                duration: 4000,
               });
               onTicketUpdate?.(data);
               break;

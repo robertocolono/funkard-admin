@@ -11,6 +11,7 @@ interface Ticket {
   priority: string;
   status: string;
   assignedTo?: string;
+  locked?: boolean;
   createdAt: string;
 }
 

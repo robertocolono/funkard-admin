@@ -27,7 +27,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
           toast({
             title: "📬 Ticket aggiornato",
             description: `Il ticket #${data.id} è ora in stato "${data.status}".`,
-            duration: 4000,
           });
         }
       } catch (error) {
@@ -48,7 +47,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
         toast({
           title: "💬 Nuovo messaggio",
           description: `Ticket #${data.ticketId} — ${data.sender}: ${data.preview || "nuovo messaggio ricevuto"}.`,
-          duration: 4000,
         });
       } catch (error) {
         console.error('Errore parsing new-message:', error);
@@ -66,7 +64,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
           toast({
             title: "🎧 Ticket assegnato",
             description: `Il ticket #${data.id} è stato assegnato a ${data.assignedToName || "un membro del supporto"}.`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -84,7 +81,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
           toast({
             title: "🔓 Ticket rilasciato",
             description: `Il ticket #${data.id} è tornato disponibile.`,
-            duration: 4000,
           });
         }
       } catch (error) {
@@ -106,7 +102,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
           toast({
             title: "✅ Ticket risolto",
             description: `Il ticket #${data.id} è stato chiuso con successo.`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -125,7 +120,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
           toast({
             title: "🎫 Nuovo ticket",
             description: `Nuovo ticket #${data.id} da ${data.email}: ${data.subject}`,
-            duration: 5000,
           });
         }
       } catch (error) {
@@ -171,7 +165,6 @@ export function useSupportEvents(userRole?: string, userId?: string) {
             toast({
               title: "📬 Ticket aggiornato",
               description: `Il ticket #${data.id} è ora in stato "${data.status}".`,
-              duration: 4000,
             });
           }
         } catch (error) {
