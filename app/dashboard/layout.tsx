@@ -5,43 +5,46 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import {
-  MessageSquare,
-  BarChart3,
-  Users,
-  Settings,
   LogOut,
-  Home,
-  Bell,
-  Store,
   Shield,
   Wifi,
   WifiOff,
+  Terminal,
 } from 'lucide-react';
-import NotificationDrawer from '@/components/admin/NotificationDrawer';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [role, setRole] = useState<string>('guest');
   const [sseStatus, setSseStatus] = useState<'online' | 'offline'>('offline');
+  const [debugEvents, setDebugEvents] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedRole = localStorage.getItem('funkard_admin_role') || 'guest';
+      const adminId = localStorage.getItem('funkard_admin_id') || 'test';
       setRole(storedRole);
 
-      // Connessione SSE test
-      const adminId = localStorage.getItem('funkard_admin_id') || 'test';
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/support/stream?userId=${adminId}&role=${storedRole}`;
       const es = new EventSource(url);
 
       setSseStatus('online');
+      console.log('[SSE] Connessione stabilita con', url);
 
-      es.onmessage = () => {
+      es.onmessage = (event) => {
         setSseStatus('online');
+        const msg = `[${new Date().toLocaleTimeString('it-IT')}] ${event.data}`;
+        console.log('%c[SSE Event]', 'color: #facc15;', msg);
+
+        // Salva ultimi 5 eventi
+        setDebugEvents((prev) => {
+          const updated = [msg, ...prev].slice(0, 5);
+          return updated;
+        });
       };
 
       es.onerror = () => {
         setSseStatus('offline');
+        console.warn('[SSE] Disconnesso, tentativo di riconnessione...');
       };
 
       const timer = setInterval(() => {
@@ -59,112 +62,107 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     localStorage.removeItem('funkard_admin_token');
     localStorage.removeItem('funkard_admin_role');
     localStorage.removeItem('funkard_admin_id');
-    window.location.href = '/login';
+    window.location.href = '/admin/login';
   };
 
-  const links = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/support', label: 'Supporto', icon: MessageSquare },
-    { href: '/dashboard/users', label: 'Utenti', icon: Users },
-    { href: '/dashboard/market', label: 'Market', icon: Store },
-    { href: '/dashboard/notifications', label: 'Notifiche', icon: Bell },
-    { href: '/dashboard/logs', label: 'Logs', icon: BarChart3 },
-    { href: '/dashboard/system', label: 'Sistema', icon: Shield },
-    { href: '/dashboard/settings', label: 'Impostazioni', icon: Settings },
-  ];
 
   return (
-    <div className="flex min-h-screen bg-neutral-950 text-gray-100">
-      {/* Sidebar */}
-      <aside className="admin-sidebar flex flex-col">
-        <div className="h-16 flex items-center justify-center border-b border-neutral-800 text-lg font-semibold text-yellow-500">
-          Funkard Admin
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1 admin-scrollbar">
-          {links.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`admin-nav-link ${
-                  active ? 'admin-nav-link-active' : 'admin-nav-link-inactive'
-                }`}
-              >
-                <Icon size={18} />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+    <div className="min-h-screen bg-neutral-950 text-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-neutral-800 bg-neutral-900/70 backdrop-blur-sm px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="text-yellow-500 font-bold tracking-wide text-lg">
+            Funkard Admin
+          </Link>
 
-        <div className="border-t border-neutral-800 p-3">
+          <nav className="flex items-center gap-4 text-sm text-gray-400">
+            <Link
+              href="/dashboard/support"
+              className={`hover:text-yellow-400 transition ${
+                pathname.includes('/support') ? 'text-yellow-400 font-medium' : ''
+              }`}
+            >
+              Support
+            </Link>
+            <Link
+              href="/dashboard/stats"
+              className={`hover:text-yellow-400 transition ${
+                pathname.includes('/stats') ? 'text-yellow-400 font-medium' : ''
+              }`}
+            >
+              Statistiche
+            </Link>
+          </nav>
+        </div>
+
+        {/* Role + SSE + Logout */}
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-neutral-800 border border-neutral-700">
+            <Shield size={14} className="text-yellow-500" />
+            <span
+              className={`uppercase font-medium ${
+                role === 'super_admin'
+                  ? 'text-yellow-400'
+                  : role === 'admin'
+                  ? 'text-blue-400'
+                  : role === 'support'
+                  ? 'text-green-400'
+                  : 'text-gray-500'
+              }`}
+            >
+              {role}
+            </span>
+
+            {sseStatus === 'online' ? (
+              <div className="flex items-center text-green-400 text-xs gap-1">
+                <Wifi size={12} /> Online
+              </div>
+            ) : (
+              <div className="flex items-center text-red-400 text-xs gap-1">
+                <WifiOff size={12} /> Offline
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors"
+            className="flex items-center gap-1 text-gray-400 hover:text-red-400 transition"
           >
-            <LogOut size={16} />
-            Logout
+            <LogOut size={14} />
+            Esci
           </button>
         </div>
-      </aside>
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="admin-header flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-white">
-              {pathname === '/dashboard' && 'Dashboard'}
-              {pathname === '/dashboard/support' && 'Gestione Supporto'}
-              {pathname === '/dashboard/users' && 'Gestione Utenti'}
-              {pathname === '/dashboard/market' && 'Gestione Market'}
-              {pathname === '/dashboard/notifications' && 'Notifiche Admin'}
-              {pathname === '/dashboard/logs' && 'Logs Sistema'}
-              {pathname === '/dashboard/system' && 'Sistema'}
-              {pathname === '/dashboard/settings' && 'Impostazioni'}
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {/* Role + SSE Status */}
-            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-neutral-800 border border-neutral-700">
-              <Shield size={14} className="text-yellow-500" />
-              <span
-                className={`uppercase font-medium ${
-                  role === 'super_admin'
-                    ? 'text-yellow-400'
-                    : role === 'admin'
-                    ? 'text-blue-400'
-                    : role === 'support'
-                    ? 'text-green-400'
-                    : 'text-gray-500'
-                }`}
-              >
-                {role}
-              </span>
+      {/* Main */}
+      <main className="flex-1 p-6 overflow-y-auto">{children}</main>
 
-              {sseStatus === 'online' ? (
-                <div className="flex items-center text-green-400 text-xs gap-1">
-                  <Wifi size={12} /> Online
-                </div>
-              ) : (
-                <div className="flex items-center text-red-400 text-xs gap-1">
-                  <WifiOff size={12} /> Offline
-                </div>
-              )}
+      {/* SSE Debug Console (solo in dev) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 bg-neutral-900/90 border border-neutral-700 rounded-lg p-3 w-[320px] max-h-[220px] overflow-y-auto text-xs font-mono text-gray-300 shadow-lg">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-1 text-yellow-400">
+              <Terminal size={12} /> SSE Debug Console
             </div>
-
-            {/* Notifiche Drawer */}
-            <NotificationDrawer />
+            <button
+              onClick={() => setDebugEvents([])}
+              className="text-gray-500 hover:text-red-400 text-[10px]"
+            >
+              Pulisci
+            </button>
           </div>
-        </header>
 
-        {/* Content Area */}
-        <div className="admin-content admin-scrollbar">
-          {children}
+          {debugEvents.length > 0 ? (
+            debugEvents.map((evt, i) => (
+              <div key={i} className="text-gray-400 border-t border-neutral-800 pt-1 mt-1">
+                {evt}
+              </div>
+            ))
+          ) : (
+            <div className="text-gray-600 italic">Nessun evento ricevuto</div>
+          )}
         </div>
-      </main>
+      )}
     </div>
   );
 }
