@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useNotifications } from '@/context/NotificationContext';
 import { LayoutDashboard, Bell, Settings, Users, MessageSquare, BarChart3, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import NotificationDrawer from './NotificationDrawer';
 
 export default function AdminNavbar() {
-  const { unreadCount, resetUnread } = useNotifications();
   const { admin } = useAuth();
 
   const getRoleColor = (role?: string) => {
@@ -71,20 +70,8 @@ export default function AdminNavbar() {
           <span className="text-sm">Utenti</span>
         </Link>
 
-        {/* Notifiche con badge */}
-        <Link 
-          href="/dashboard/notifications" 
-          onClick={resetUnread}
-          className="relative text-gray-300 hover:text-white transition-colors flex items-center gap-2"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="text-sm">Notifiche</span>
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center animate-pulse">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </Link>
+        {/* Notifiche con drawer */}
+        <NotificationDrawer />
 
         {/* Support */}
         <Link href="/dashboard/support" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">

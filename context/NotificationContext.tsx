@@ -9,6 +9,8 @@ interface NotificationContextType {
   incrementUnread: () => void;
   resetUnread: () => void;
   markAsRead: (ticketId: string) => void;
+  markAllAsRead: () => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   notifications: Notification[];
 }
 
@@ -48,6 +50,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       )
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
+  // Marca tutte le notifiche come lette
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+    setUnreadCount(0);
   };
 
   // Aggiungi notifica
@@ -200,6 +210,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     incrementUnread,
     resetUnread,
     markAsRead,
+    markAllAsRead,
+    addNotification,
     notifications,
   };
 
