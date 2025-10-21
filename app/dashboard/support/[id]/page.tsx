@@ -1,265 +1,226 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Loader2, ArrowLeft, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
-import SockJS from 'sockjs-client'
-import { Client } from '@stomp/stompjs'
-import { toast } from 'sonner'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://funkard-backend.onrender.com'
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import { fetchTicketById, replyToTicket, assignTicket, closeTicket } from '@/lib/funkardApi';
+import { cn } from '@/lib/utils';
 
 interface Message {
-  id: number
-  sender: string
-  content: string
-  createdAt: string
+  id: string;
+  sender: string;
+  content: string;
+  createdAt: string;
+  fromAdmin: boolean;
 }
 
 interface Ticket {
-  id: number
-  subject: string
-  userEmail: string
-  category: string
-  priority: string
-  status: string
-  createdAt: string
-  messages: Message[]
+  id: string;
+  subject: string;
+  category: string;
+  priority: string;
+  status: string;
+  email: string;
+  assignedTo?: string | null;
+  locked: boolean;
+  messages: Message[];
+  createdAt: string;
 }
 
-export default function AdminSupportChatPage() {
-  const { id } = useParams()
-  const router = useRouter()
-  const [ticket, setTicket] = useState<Ticket | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [reply, setReply] = useState('')
-  const [sending, setSending] = useState(false)
-  const [wsConnected, setWsConnected] = useState(false)
-  const [stompClient, setStompClient] = useState<Client | null>(null)
+export default function TicketDetailPage() {
+  const params = useParams();
+  const ticketId = params?.id as string;
 
-  const fetchTicket = async () => {
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  /** ✅ Carica il ticket */
+  const loadTicket = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/support/tickets/${id}`, {
-        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}` },
-      })
-      if (!res.ok) throw new Error('Errore nel caricamento del ticket')
-      const data = await res.json()
-      setTicket(data)
+      const data = await fetchTicketById(ticketId);
+      setTicket(data);
     } catch (err) {
-      console.error(err)
+      console.error('Errore caricamento ticket', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [ticketId]);
 
+  /** 📡 Invia un messaggio */
   const handleReply = async () => {
-    if (!reply.trim() || !stompClient || !wsConnected) return
-    setSending(true)
+    if (!newMessage.trim()) return;
+    setSending(true);
     try {
-      // Invia messaggio via WebSocket
-      stompClient.publish({
-        destination: `/app/support/${id}/send`,
-        body: JSON.stringify({ sender: 'admin', content: reply }),
-      })
-      setReply('')
-      console.log('Message sent via WebSocket:', { sender: 'admin', content: reply })
+      await replyToTicket(ticketId, newMessage);
+      setNewMessage('');
+      await loadTicket();
     } catch (err) {
-      console.error('WebSocket send error:', err)
-      alert('Errore durante l'invio della risposta')
+      alert('Errore invio messaggio');
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
-  const handleClose = async () => {
-    if (!confirm('Vuoi chiudere definitivamente questo ticket?')) return
+  /** 🧩 Prendi in carico ticket */
+  const handleAssign = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/support/close/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}` },
-      })
-      if (!res.ok) throw new Error('Errore nella chiusura del ticket')
-      await fetchTicket()
-    } catch (err) {
-      alert('Errore durante la chiusura del ticket')
+      const email = localStorage.getItem('funkard_admin_email');
+      if (!email) return alert('Email admin non trovata.');
+      await assignTicket(ticketId, email);
+      await loadTicket();
+    } catch {
+      alert('Errore assegnazione ticket');
     }
-  }
+  };
 
+  /** ✅ Chiudi ticket */
+  const handleClose = async () => {
+    if (!confirm('Sei sicuro di voler chiudere questo ticket?')) return;
+    try {
+      await closeTicket(ticketId);
+      await loadTicket();
+    } catch {
+      alert('Errore chiusura ticket');
+    }
+  };
+
+  /** 🔐 Recupera ruolo admin */
   useEffect(() => {
-    fetchTicket()
-    
-    // WebSocket per messaggi real-time
-    const socket = new SockJS(`${process.env.NEXT_PUBLIC_API_URL}/ws`)
-    const client = new Client({
-      webSocketFactory: () => socket as any,
-      debug: () => {},
-      reconnectDelay: 5000,
-      onConnect: () => {
-        console.log('WebSocket connected for ticket:', id)
-        setWsConnected(true)
-        client.subscribe(`/topic/support/${id}`, (message) => {
-          const data = JSON.parse(message.body)
-          console.log('WebSocket data received:', data)
+    const storedRole = localStorage.getItem('funkard_role') as
+      | 'SUPER_ADMIN'
+      | 'ADMIN'
+      | 'SUPPORT'
+      | null;
+    setRole(storedRole);
+    loadTicket();
 
-          if (data.event === "CLOSED") {
-            // Evento di chiusura ticket
-            console.log('Ticket closed event:', data)
-            toast(`🔒 Ticket "${data.subject}" chiuso e archiviato`)
-            setTicket((prev) =>
-              prev
-                ? { ...prev, status: 'closed', ...data }
-                : prev
-            )
-          } else if (data.event === "STATUS_CHANGED") {
-            // Evento di cambio stato
-            console.log('Ticket status changed:', data)
-            toast(`📝 Ticket "${data.subject}" - Stato aggiornato a ${data.status}`)
-            setTicket((prev) =>
-              prev
-                ? { ...prev, status: data.status, ...data }
-                : prev
-            )
-          } else if (data.event === "PRIORITY_CHANGED") {
-            // Evento di cambio priorità
-            console.log('Ticket priority changed:', data)
-            toast(`⚡ Ticket "${data.subject}" - Priorità aggiornata a ${data.priority}`)
-            setTicket((prev) =>
-              prev
-                ? { ...prev, priority: data.priority, ...data }
-                : prev
-            )
-          } else if (data.content) {
-            // È un messaggio di chat (SupportMessageDTO)
-            console.log('New chat message:', data)
-            setTicket((prev) =>
-              prev
-                ? { ...prev, messages: [...prev.messages, data] }
-                : prev
-            )
-          } else {
-            // È un aggiornamento del ticket (TicketDTO)
-            console.log('Ticket update:', data)
-            setTicket((prev) =>
-              prev
-                ? { ...prev, ...data }
-                : prev
-            )
-          }
-        })
-      },
-      onDisconnect: () => {
-        console.log('WebSocket disconnected')
-        setWsConnected(false)
-      },
-      onStompError: (error) => {
-        console.error('STOMP error:', error)
-      }
-    })
+    // Polling aggiornamenti
+    const interval = setInterval(loadTicket, 7000);
+    return () => clearInterval(interval);
+  }, [loadTicket]);
 
-    client.activate()
-    setStompClient(client)
-
-    return () => {
-      client.deactivate()
-      setStompClient(null)
-    }
-  }, [id])
-
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex h-screen items-center justify-center text-gray-400 bg-zinc-950">
-        <Loader2 className="animate-spin mr-2" /> Caricamento ticket...
+      <div className="flex items-center justify-center min-h-screen bg-zinc-950 text-gray-400">
+        Caricamento ticket...
       </div>
-    )
-  }
+    );
 
-  if (!ticket) {
+  if (!ticket)
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950 text-gray-400">
-        Ticket non trovato
+      <div className="flex items-center justify-center min-h-screen text-gray-400">
+        Ticket non trovato.
       </div>
-    )
-  }
+    );
+
+  const isAssignedToMe =
+    ticket.assignedTo &&
+    ticket.assignedTo === localStorage.getItem('funkard_admin_email');
+
+  const canReply =
+    role === 'SUPER_ADMIN' || (role === 'SUPPORT' && isAssignedToMe);
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4 bg-zinc-900">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" onClick={() => router.push('/dashboard/support')}>
-            <ArrowLeft size={18} className="text-gray-400" />
-          </Button>
+    <div className="min-h-screen bg-zinc-950 text-white p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* HEADER */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="font-semibold">{ticket.subject}</h1>
-            <p className="text-xs text-gray-400">
-              {ticket.userEmail} • {ticket.category} • Priorità: {ticket.priority}
-              {wsConnected && <span className="ml-2 text-green-400">● Live</span>}
+            <h1 className="text-2xl font-bold">{ticket.subject}</h1>
+            <p className="text-gray-400 text-sm">
+              Ticket #{ticket.id} • {ticket.category} • Priorità:{' '}
+              <span className="text-yellow-400 font-semibold">{ticket.priority}</span>
+            </p>
+            <p className="text-gray-500 text-xs mt-1">
+              Creato il {new Date(ticket.createdAt).toLocaleString('it-IT')}
             </p>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleClose}
-            className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-          >
-            <CheckCircle2 size={16} />
-            Chiudi ticket
-          </Button>
-        </div>
-      </div>
 
-      {/* Chat */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {ticket.messages.length === 0 ? (
-          <p className="text-gray-500 text-center">Nessun messaggio ancora.</p>
-        ) : (
-          ticket.messages.map((msg) => (
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                'px-3 py-1 rounded-full text-xs font-semibold uppercase',
+                ticket.status === 'OPEN' && 'bg-green-500/20 text-green-400',
+                ticket.status === 'IN_PROGRESS' && 'bg-yellow-500/20 text-yellow-400',
+                ticket.status === 'RESOLVED' && 'bg-blue-500/20 text-blue-400',
+                ticket.status === 'CLOSED' && 'bg-gray-600/20 text-gray-400'
+              )}
+            >
+              {ticket.status}
+            </span>
+
+            {role === 'SUPPORT' && !ticket.assignedTo && (
+              <button
+                onClick={handleAssign}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg text-sm font-semibold"
+              >
+                Prendi in carico
+              </button>
+            )}
+
+            {role === 'SUPER_ADMIN' && (
+              <button
+                onClick={handleClose}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-semibold"
+              >
+                Chiudi Ticket
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* CHAT */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-h-[70vh] overflow-y-auto space-y-4">
+          {ticket.messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${
-                msg.sender === 'admin' ? 'justify-end' : 'justify-start'
-              }`}
+              className={cn(
+                'p-3 rounded-lg w-fit max-w-[80%]',
+                msg.fromAdmin
+                  ? 'bg-yellow-500/20 text-yellow-100 self-end ml-auto'
+                  : 'bg-zinc-800 text-gray-200'
+              )}
             >
-              <div
-                className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
-                  msg.sender === 'admin'
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-zinc-800 text-gray-100 border border-zinc-700'
-                }`}
-              >
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <span className="text-xs text-gray-400 block mt-1">
-                  {new Date(msg.createdAt).toLocaleTimeString('it-IT', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
+              <p className="text-sm">{msg.content}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {msg.fromAdmin ? 'Staff' : ticket.email} •{' '}
+                {new Date(msg.createdAt).toLocaleTimeString('it-IT')}
+              </p>
             </div>
-          ))
+          ))}
+        </div>
+
+        {/* BOX MESSAGGIO */}
+        {canReply && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex gap-3">
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Scrivi una risposta..."
+              className="flex-1 bg-zinc-800 text-white p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:outline-none min-h-[80px]"
+            />
+            <button
+              onClick={handleReply}
+              disabled={sending}
+              className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-500/50 text-black font-semibold px-6 rounded-lg transition-colors"
+            >
+              {sending ? 'Invio...' : 'Invia'}
+            </button>
+          </div>
+        )}
+
+        {!canReply && (
+          <p className="text-gray-500 text-sm italic text-center">
+            {ticket.assignedTo
+              ? ticket.assignedTo === localStorage.getItem('funkard_admin_email')
+                ? 'Ticket assegnato a te.'
+                : `Ticket gestito da ${ticket.assignedTo}.`
+              : 'Ticket non ancora preso in carico.'}
+          </p>
         )}
       </div>
-
-      {/* Footer */}
-      <div className="border-t border-zinc-800 bg-zinc-900 p-4 flex gap-3 items-center">
-        <input
-          type="text"
-          placeholder="Scrivi una risposta..."
-          value={reply}
-          onChange={(e) => setReply(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleReply()}
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-        />
-        <Button
-          onClick={handleReply}
-          disabled={sending || !reply.trim() || !wsConnected}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg disabled:opacity-50"
-          title={!wsConnected ? 'Connessione WebSocket non disponibile' : ''}
-        >
-          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-        </Button>
-      </div>
     </div>
-  )
+  );
 }
