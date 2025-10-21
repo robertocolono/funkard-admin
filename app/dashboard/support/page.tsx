@@ -1,309 +1,150 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, Search, ArrowUpDown } from "lucide-react"
-import { toast } from "sonner"
-import SupportStats from "./stats"
+import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { MessageSquare, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://funkard-backend.onrender.com"
+export default function SupportAdminPage() {
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newCount, setNewCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
 
-interface Ticket {
-  id: number
-  userEmail: string
-  subject: string
-  category: string
-  priority: string
-  status: string
-  createdAt: string
-}
-
-export default function SupportPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [newTicketsCount, setNewTicketsCount] = useState(0)
-
-  // Legge i parametri dall'URL
-  const [search, setSearch] = useState(searchParams.get("search") || "")
-  const [status, setStatus] = useState(searchParams.get("status") || "")
-  const [priority, setPriority] = useState(searchParams.get("priority") || "")
-  const [category, setCategory] = useState(searchParams.get("category") || "")
-  const [sort, setSort] = useState(searchParams.get("sort") || "desc")
-
-  const updateQuery = () => {
-    const params = new URLSearchParams()
-    if (search) params.set("search", search)
-    if (status) params.set("status", status)
-    if (priority) params.set("priority", priority)
-    if (category) params.set("category", category)
-    if (sort) params.set("sort", sort)
-    router.replace(`?${params.toString()}`)
-  }
-
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
-
-      const params = new URLSearchParams()
-      if (search) params.append("search", search)
-      if (status) params.append("status", status)
-      if (priority) params.append("priority", priority)
-      if (category) params.append("category", category)
-      if (sort) params.append("sort", sort)
-
-      const res = await fetch(`${API_BASE}/api/admin/support/tickets?${params.toString()}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/support/tickets`, {
         headers: {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
         },
-      })
+      });
+      if (!res.ok) throw new Error('Errore nel caricamento');
+      const data = await res.json();
 
-      if (!res.ok) throw new Error("Errore nel caricamento ticket")
-      const data = await res.json()
-      setTickets(data)
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+      // 🔍 Verifica nuovi ticket o messaggi
+      const fresh = data.filter((t: any) => t.status === 'NEW' || t.hasNewMessages);
+      const prevCount = newCount;
 
-  useEffect(() => {
-    updateQuery()
-    fetchTickets()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status, priority, category, sort])
+      if (fresh.length > prevCount && !loading) {
+        const diff = fresh.length - prevCount;
 
-  // Polling per nuovi ticket
-  useEffect(() => {
-    const pollNewTickets = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/admin/support/tickets`, {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-          },
-        })
-        if (!res.ok) return
-        
-        const data = await res.json()
-        
-        // Trova nuovi messaggi o ticket non letti
-        const newOnes = data.filter((ticket: Ticket) => 
-          ticket.status === 'NEW' || ticket.status === 'open'
-        )
-        
-        if (newOnes.length > 0) {
-          toast(`📨 ${newOnes.length} nuovo/i ticket o risposta utente`, {
-            style: { background: '#1a1a1a', color: '#fff' },
-          })
-          
-          // Suono notifica (se disponibile)
-          try {
-            const sound = new Audio('/sounds/admin-notification.mp3')
-            sound.volume = 0.4
-            sound.play().catch(() => {})
-          } catch (e) {
-            console.log('Audio notification not available')
-          }
-        }
-        
-        setNewTicketsCount(newOnes.length)
-        setTickets(data)
-      } catch (e) {
-        console.error('Polling admin error', e)
+        // 🔔 Toast + suono
+        toast.success(`📨 ${diff} nuovo${diff > 1 ? 'i' : ''} ticket o messaggio`, {
+          style: { background: '#1a1a1a', color: '#fff' },
+        });
+
+        const sound = new Audio('/sounds/admin-notification.mp3');
+        sound.volume = 0.4;
+        sound.play().catch(() => {});
       }
-    }
 
-    const interval = setInterval(pollNewTickets, 5000)
-    return () => clearInterval(interval)
-  }, [])
+      setNewCount(fresh.length);
+      setTickets(data);
+      setLoading(false);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [loading, newCount]);
+
+  // 🧭 Polling
+  useEffect(() => {
+    if (!isOnline) return;
+    fetchTickets();
+    const interval = setInterval(fetchTickets, 5000);
+    return () => clearInterval(interval);
+  }, [fetchTickets, isOnline]);
+
+  // 🌐 Rileva online/offline
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <p className="text-gray-400">Caricamento ticket...</p>
+      </div>
+    );
 
   return (
-    <div className="space-y-8">
-      {/* STATISTICHE */}
-      <SupportStats />
-
-      {/* HEADER E CONTROLLI */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">Ticket di Supporto</h1>
-            {newTicketsCount > 0 && (
-              <span className="bg-yellow-500 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                {newTicketsCount}
-              </span>
-            )}
-          </div>
-          <Button onClick={fetchTickets} variant="outline" className="gap-2">
-            <Loader2 size={16} className={loading ? "animate-spin" : ""} />
-            Aggiorna
-          </Button>
+    <div className="min-h-screen bg-zinc-950 text-white px-6 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <MessageSquare className="w-6 h-6 text-yellow-500" /> Ticket di supporto
+        </h1>
+        <div className="flex items-center gap-4">
+          {isOnline ? (
+            <span className="text-green-400 text-sm">🟢 Online</span>
+          ) : (
+            <span className="text-red-400 text-sm">🔴 Offline</span>
+          )}
+          <button
+            onClick={fetchTickets}
+            className="flex items-center gap-2 bg-yellow-500 text-black px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition"
+          >
+            <RefreshCw className="w-4 h-4" /> Aggiorna
+          </button>
         </div>
-
-        {/* FILTRI AVANZATI */}
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-            <Input
-              placeholder="Cerca per email o soggetto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="">Tutti gli stati</option>
-            <option value="open">Aperti</option>
-            <option value="in_progress">In corso</option>
-            <option value="resolved">Risolti</option>
-            <option value="closed">Chiusi</option>
-          </select>
-
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="">Tutte le priorità</option>
-            <option value="low">Bassa</option>
-            <option value="normal">Normale</option>
-            <option value="high">Alta</option>
-            <option value="urgent">Urgente</option>
-          </select>
-
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="">Tutte le categorie</option>
-            <option value="technical">Tecnico</option>
-            <option value="billing">Pagamenti</option>
-            <option value="general">Generale</option>
-            <option value="grading">Grading</option>
-          </select>
-
-          <Button
-            variant="secondary"
-            onClick={() => setSort(sort === "asc" ? "desc" : "asc")}
-            className="flex items-center gap-2"
-          >
-            <ArrowUpDown size={14} />
-            {sort === "desc" ? "Data ↓" : "Data ↑"}
-          </Button>
-        </div>
-
-        {/* LISTA TICKET */}
-        {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-md border border-red-200 text-sm">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center py-10 text-gray-500">
-            <Loader2 className="animate-spin mr-2" size={18} />
-            Caricamento in corso...
-          </div>
-        ) : (
-          <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="text-left px-4 py-2">ID</th>
-                  <th className="text-left px-4 py-2">Utente</th>
-                  <th className="text-left px-4 py-2">Soggetto</th>
-                  <th className="text-left px-4 py-2">Categoria</th>
-                  <th className="text-left px-4 py-2">Priorità</th>
-                  <th className="text-left px-4 py-2">Stato</th>
-                  <th className="text-left px-4 py-2">Data</th>
-                  <th className="text-right px-4 py-2">Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-6 text-gray-500">
-                      Nessun ticket trovato
-                    </td>
-                  </tr>
-                ) : (
-                  tickets.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-t hover:bg-gray-50 cursor-pointer transition"
-                      onClick={() =>
-                        window.location.assign(`/dashboard/support/${t.id}`)
-                      }
-                    >
-                      <td className="px-4 py-2">{t.id}</td>
-                      <td className="px-4 py-2">{t.userEmail}</td>
-                      <td className="px-4 py-2">{t.subject}</td>
-                      <td className="px-4 py-2 capitalize">{t.category}</td>
-                      <td className="px-4 py-2">
-                        <Badge
-                          className={`${
-                            t.priority === "urgent"
-                              ? "bg-red-100 text-red-800"
-                              : t.priority === "high"
-                              ? "bg-orange-100 text-orange-800"
-                              : t.priority === "normal"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {t.priority}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 capitalize">
-                        <Badge
-                          className={`${
-                            t.status === "open"
-                              ? "bg-blue-100 text-blue-800"
-                              : t.status === "in_progress"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : t.status === "resolved"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {t.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2">
-                        {new Date(t.createdAt).toLocaleDateString("it-IT")}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <button 
-                          className="text-blue-600 hover:underline text-sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.location.assign(`/dashboard/support/${t.id}`)
-                          }}
-                        >
-                          Dettagli
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
+
+      {/* Badge nuovi ticket */}
+      {newCount > 0 && (
+        <div className="mb-4 text-yellow-400 font-medium">
+          🔔 {newCount} ticket con nuovi messaggi
+        </div>
+      )}
+
+      {/* Lista ticket */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {tickets.map((t) => (
+          <Link key={t.id} href={`/dashboard/support/${t.id}`}>
+            <div
+              className={`p-4 rounded-xl border transition-colors ${
+                t.status === 'NEW' || t.hasNewMessages
+                  ? 'border-yellow-500/50 bg-zinc-900'
+                  : 'border-zinc-800 bg-zinc-900/50'
+              } hover:border-yellow-400`}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-semibold text-white">{t.subject}</h2>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    t.status === 'NEW'
+                      ? 'bg-yellow-600/20 text-yellow-400'
+                      : t.status === 'IN_PROGRESS'
+                      ? 'bg-blue-600/20 text-blue-400'
+                      : t.status === 'RESOLVED'
+                      ? 'bg-green-600/20 text-green-400'
+                      : 'bg-zinc-700/20 text-zinc-400'
+                  }`}
+                >
+                  {t.status}
+                </span>
+              </div>
+              <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                {t.preview || 'Nessun messaggio recente'}
+              </p>
+              <div className="text-xs text-gray-500">
+                {new Date(t.createdAt).toLocaleString('it-IT')}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {tickets.length === 0 && (
+        <div className="text-center text-gray-500 py-20">
+          Nessun ticket presente 📭
+        </div>
+      )}
     </div>
-  )
+  );
 }

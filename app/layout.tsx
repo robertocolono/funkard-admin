@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
+import { Toaster as HotToaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToast from "@/components/NotificationToast";
 // import { useNotifications } from "@/lib/hooks/useNotifications";
@@ -53,6 +54,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             
             {/* ShadCN Toast Toaster */}
             <ToastToaster />
+            
+            {/* React Hot Toast Toaster */}
+            <HotToaster 
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#1a1a1a',
+                  color: '#fff',
+                  border: '1px solid #333',
+                },
+              }}
+            />
       </body>
     </html>
   );
