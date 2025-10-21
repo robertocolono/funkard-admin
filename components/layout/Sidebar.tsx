@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Home, Users, Store, Bell, LogOut, LifeBuoy, Settings, BarChart3 } from "lucide-react"
+import { Home, Users, Store, Bell, LogOut, LifeBuoy, Settings, BarChart3, TestTube } from "lucide-react"
 import { cn } from "@/lib/utils"
 import SupportBadge from "@/components/admin/SupportBadge"
 
@@ -13,6 +13,7 @@ const menuItems = [
   { name: "Notifiche", href: "/dashboard/notifications", icon: Bell },
   { name: "Logs", href: "/dashboard/logs", icon: BarChart3 },
   { name: "Supporto", href: "/dashboard/support", icon: LifeBuoy },
+  { name: "Test Toast", href: "/dashboard/test-toast", icon: TestTube },
   { name: "Impostazioni", href: "/dashboard/settings", icon: Settings },
 ]
 

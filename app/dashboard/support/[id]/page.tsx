@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { useSession } from '@/lib/useSession';
+import { useTicketSSE } from '@/hooks/useTicketSSE';
 import { cn } from '@/lib/utils';
 import { MessageSquare, User, Clock, Tag, AlertCircle, Send, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -155,47 +156,18 @@ export default function TicketDetailPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // SSE per aggiornamenti in tempo reale
-  useEffect(() => {
-    const es = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/stream`);
-    
-    es.addEventListener('ticket-update', async (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.ticketId === parseInt(id as string)) {
-          console.log('📡 Ticket aggiornato via SSE:', data);
-          await loadTicket();
-          
-          // Notifiche specifiche per tipo di evento
-          if (data.type === 'NEW_MESSAGE') {
-            toast({
-              title: '💬 Nuovo messaggio',
-              description: `Nuovo messaggio da ${data.from || 'utente'}`,
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Errore parsing SSE:', err);
-      }
-    });
-
-    es.addEventListener('ping', () => {
-      console.log('🔄 SSE keep-alive ricevuto');
-    });
-
-    es.onopen = () => {
-      console.log('🔗 SSE connesso per ticket:', id);
-    };
-
-    es.onerror = (error) => {
-      console.warn('⚠️ SSE disconnesso per ticket:', error);
-    };
-
-    return () => {
-      console.log('🔌 SSE disconnesso per ticket:', id);
-      es.close();
-    };
-  }, [id, toast]);
+  // SSE per aggiornamenti in tempo reale del ticket specifico
+  useTicketSSE({
+    ticketId: id as string,
+    onTicketUpdate: async (data) => {
+      console.log('📡 Ticket aggiornato via SSE:', data);
+      await loadTicket();
+    },
+    onMessageUpdate: async (data) => {
+      console.log('💬 Nuovo messaggio via SSE:', data);
+      await loadTicket();
+    }
+  });
 
   useEffect(() => {
     if (user?.token) {
