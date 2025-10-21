@@ -1,12 +1,18 @@
 'use client';
 
 import { useTickets } from '@/hooks/useTickets';
+import { useSupportEvents } from '@/hooks/useSupportEvents';
+import { useSession } from '@/lib/useSession';
 import { TicketRow } from '@/components/support/TicketRow';
 import Link from 'next/link';
 import { MessageSquare, RefreshCw, Filter, Search } from 'lucide-react';
 
 export default function SupportDashboardPage() {
   const { tickets, loading, error, filters, setFilters, reload } = useTickets();
+  const { user } = useSession();
+  
+  // Inizializza eventi SSE per notifiche real-time
+  useSupportEvents(user?.role, user?.id);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6">

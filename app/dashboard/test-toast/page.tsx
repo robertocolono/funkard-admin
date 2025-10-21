@@ -1,6 +1,7 @@
 'use client';
 
 import { ToastTestPanel } from '@/components/admin/ToastTestPanel';
+import { SupportEventsExample } from '@/components/admin/SupportEventsExample';
 import { useSupportStream } from '@/hooks/useSupportStream';
 
 export default function TestToastPage() {
@@ -18,6 +19,10 @@ export default function TestToastPage() {
         </div>
 
         <ToastTestPanel />
+
+        <div className="mt-8">
+          <SupportEventsExample />
+        </div>
 
         <div className="mt-8 p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
           <h2 className="text-xl font-semibold mb-4">Eventi SSE Supportati</h2>

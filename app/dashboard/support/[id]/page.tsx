@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { useSession } from '@/lib/useSession';
+import { useSupportEvents } from '@/hooks/useSupportEvents';
 import { useTicketSSE } from '@/hooks/useTicketSSE';
 import { cn } from '@/lib/utils';
 import { MessageSquare, User, Clock, Tag, AlertCircle, Send, Lock, Unlock } from 'lucide-react';
@@ -168,6 +169,9 @@ export default function TicketDetailPage() {
       await loadTicket();
     }
   });
+
+  // SSE globale per notifiche toast
+  useSupportEvents(user?.role, user?.id);
 
   useEffect(() => {
     if (user?.token) {
