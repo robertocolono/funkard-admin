@@ -97,3 +97,62 @@ export async function fetchAllTickets(filters?: {
   if (!res.ok) throw new Error('Errore caricamento lista ticket');
   return res.json();
 }
+
+/**
+ * 📊 Recupera statistiche supporto
+ * GET /api/admin/support/stats
+ */
+export async function fetchSupportStats() {
+  const token = localStorage.getItem('funkard_token');
+  
+  const res = await fetch(`${API_BASE}/admin/support/stats`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) throw new Error('Errore caricamento statistiche');
+  return res.json();
+}
+
+
+/**
+ * 💬 Invia messaggio admin
+ * POST /api/admin/support/{id}/reply
+ */
+export async function sendAdminMessage(id: string, message: string) {
+  const token = localStorage.getItem('funkard_token');
+  
+  const res = await fetch(`${API_BASE}/admin/support/${id}/reply`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) throw new Error('Errore invio messaggio');
+  return res.json();
+}
+
+/**
+ * 🔄 Aggiorna stato ticket
+ * PATCH /api/admin/support/{id}/status
+ */
+export async function updateTicketStatus(id: string, status: string) {
+  const token = localStorage.getItem('funkard_token');
+  
+  const res = await fetch(`${API_BASE}/admin/support/${id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!res.ok) throw new Error('Errore aggiornamento stato');
+  return res.json();
+}

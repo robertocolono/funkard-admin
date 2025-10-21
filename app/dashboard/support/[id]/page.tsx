@@ -2,399 +2,182 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
-import { useSession } from '@/lib/useSession';
-import { useSupportEvents } from '@/hooks/useSupportEvents';
-import { useTicketSSE } from '@/hooks/useTicketSSE';
-import { cn } from '@/lib/utils';
-import { MessageSquare, User, Clock, Tag, AlertCircle, Send, Lock, Unlock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { fetchTicketById, sendAdminMessage, updateTicketStatus } from '@/lib/funkardApi';
+import { Loader2, Send, Lock, Unlock, UserCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function TicketDetailPage() {
   const { id } = useParams();
-  const { toast } = useToast();
-  const { user } = useSession();
   const [ticket, setTicket] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reply, setReply] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [assigning, setAssigning] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Carica ticket
   const loadTicket = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/${id}`, {
-        headers: { Authorization: `Bearer ${user?.token}` },
-      });
-      
-      if (!res.ok) {
-        throw new Error('Errore nel caricamento ticket');
-      }
-      
-      const data = await res.json();
-      setTicket(data.ticket);
+      const data = await fetchTicketById(id as string);
+      setTicket(data);
       setMessages(data.messages || []);
-    } catch (err) {
-      console.error('Errore loadTicket:', err);
-      toast({ 
-        title: 'Errore nel caricamento ticket', 
-        description: 'Impossibile caricare i dettagli del ticket',
-        variant: 'destructive' 
-      });
+    } catch (e) {
+      console.error(e);
+      toast.error('Errore nel caricamento del ticket');
     } finally {
       setLoading(false);
     }
   };
 
-  const sendReply = async () => {
-    if (!reply.trim() || sending) return;
-    
+  useEffect(() => {
+    loadTicket();
+    const interval = setInterval(loadTicket, 8000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!newMessage.trim()) return;
     setSending(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/reply/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ message: reply }),
-      });
-      
-      if (res.ok) {
-        setReply('');
-        await loadTicket();
-        toast({ 
-          title: 'Messaggio inviato ✅', 
-          description: 'Il messaggio è stato inviato all\'utente'
-        });
-      } else {
-        throw new Error('Errore nell\'invio del messaggio');
-      }
-    } catch (err) {
-      console.error('Errore sendReply:', err);
-      toast({ 
-        title: 'Errore durante l\'invio', 
-        description: 'Impossibile inviare il messaggio',
-        variant: 'destructive' 
-      });
+      await sendAdminMessage(id as string, newMessage);
+      setNewMessage('');
+      await loadTicket();
+    } catch {
+      toast.error('Errore invio messaggio');
     } finally {
       setSending(false);
     }
   };
 
-  const handleAssign = async () => {
-    if (assigning) return;
-    
-    setAssigning(true);
+  const handleStatusChange = async (newStatus: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/assign/${id}`, {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${user?.token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (res.ok) {
-        await loadTicket();
-        toast({ 
-          title: '🎧 Ticket preso in carico', 
-          description: 'Hai preso in carico questo ticket'
-        });
-      } else {
-        throw new Error('Errore nell\'assegnazione');
-      }
-    } catch (err) {
-      console.error('Errore handleAssign:', err);
-      toast({ 
-        title: 'Errore nell\'assegnazione', 
-        description: 'Impossibile prendere in carico il ticket',
-        variant: 'destructive' 
-      });
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  const handleUnassign = async () => {
-    if (assigning) return;
-    
-    setAssigning(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/support/unassign/${id}`, {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${user?.token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (res.ok) {
-        await loadTicket();
-        toast({ 
-          title: '🔓 Ticket rilasciato', 
-          description: 'Il ticket è tornato disponibile'
-        });
-      } else {
-        throw new Error('Errore nel rilascio');
-      }
-    } catch (err) {
-      console.error('Errore handleUnassign:', err);
-      toast({ 
-        title: 'Errore nel rilascio', 
-        description: 'Impossibile rilasciare il ticket',
-        variant: 'destructive' 
-      });
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  // Auto-scroll in fondo
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // SSE per aggiornamenti in tempo reale del ticket specifico
-  useTicketSSE({
-    ticketId: id as string,
-    onTicketUpdate: async (data) => {
-      console.log('📡 Ticket aggiornato via SSE:', data);
+      await updateTicketStatus(id as string, newStatus);
+      toast.success(`Stato aggiornato a ${newStatus}`);
       await loadTicket();
-    },
-    onMessageUpdate: async (data) => {
-      console.log('💬 Nuovo messaggio via SSE:', data);
-      await loadTicket();
-    }
-  });
-
-  // SSE globale per notifiche toast
-  useSupportEvents(user?.role, user?.id);
-
-  useEffect(() => {
-    if (user?.token) {
-      loadTicket();
-    }
-  }, [id, user?.token]);
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'new': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'in_progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'resolved': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'closed': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    } catch {
+      toast.error('Errore aggiornamento stato');
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'urgent': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  if (loading || !ticket) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Caricamento ticket...</p>
-        </div>
+      <div className="flex items-center justify-center h-[70vh] text-gray-400">
+        <Loader2 className="animate-spin mr-2" /> Caricamento ticket...
       </div>
     );
   }
 
-  const canManageTicket = user?.role === 'SUPER_ADMIN' || user?.role === 'SUPPORT';
-  const isAssignedToMe = ticket.assignedTo === user?.email;
-  const isLockedByOther = ticket.locked && !isAssignedToMe;
+  if (!ticket) {
+    return (
+      <div className="text-center text-gray-400 mt-10">
+        Ticket non trovato o errore di connessione.
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* HEADER */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <h1 className="text-2xl font-bold text-white">{ticket.subject}</h1>
-                <Badge className={cn("px-3 py-1 text-xs font-semibold", getStatusColor(ticket.status))}>
-                  {ticket.status}
-                </Badge>
-                <Badge className={cn("px-3 py-1 text-xs font-semibold", getPriorityColor(ticket.priority))}>
-                  {ticket.priority}
-                </Badge>
-                {ticket.locked && (
-                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1 text-xs font-semibold flex items-center gap-1">
-                    <Lock className="w-3 h-3" />
-                    Bloccato
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  <span>{ticket.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  <span>{ticket.category}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{new Date(ticket.createdAt).toLocaleString('it-IT')}</span>
-                </div>
-                {ticket.assignedTo && (
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Assegnato a {ticket.assignedTo}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+    <div className="flex flex-col h-[calc(100vh-6rem)]">
+      {/* HEADER INFO */}
+      <div className="border-b border-neutral-800 pb-3 mb-3">
+        <div className="flex justify-between items-start flex-wrap gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-yellow-500 mb-1">{ticket.subject}</h1>
+            <p className="text-sm text-gray-400">
+              ID: {ticket.id} — {ticket.email}
+            </p>
+          </div>
 
-            {/* AZIONI */}
-            {canManageTicket && (
-              <div className="flex gap-3">
-                {!ticket.locked ? (
-                  <Button
-                    onClick={handleAssign}
-                    disabled={assigning}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
-                  >
-                    {assigning ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                    ) : (
-                      <Lock className="w-4 h-4" />
-                    )}
-                    {assigning ? 'Assegnando...' : 'Prendi in carico'}
-                  </Button>
-                ) : isAssignedToMe ? (
-                  <Button
-                    onClick={handleUnassign}
-                    disabled={assigning}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
-                  >
-                    {assigning ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <Unlock className="w-4 h-4" />
-                    )}
-                    {assigning ? 'Rilasciando...' : 'Rilascia'}
-                  </Button>
-                ) : (
-                  <div className="text-sm text-gray-400 flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    <span>In carico a {ticket.assignedTo}</span>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleStatusChange('IN_PROGRESS')}
+              className="px-3 py-1 bg-yellow-500/10 border border-yellow-500 text-yellow-400 rounded text-xs hover:bg-yellow-500/20 transition"
+            >
+              In lavorazione
+            </button>
+            <button
+              onClick={() => handleStatusChange('RESOLVED')}
+              className="px-3 py-1 bg-green-500/10 border border-green-500 text-green-400 rounded text-xs hover:bg-green-500/20 transition"
+            >
+              Risolto
+            </button>
+            <button
+              onClick={() => handleStatusChange('CLOSED')}
+              className="px-3 py-1 bg-neutral-800 border border-neutral-700 text-gray-400 rounded text-xs hover:bg-neutral-700 transition"
+            >
+              Chiudi
+            </button>
           </div>
         </div>
 
-        {/* CHAT MESSAGGI */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageSquare className="w-5 h-5 text-yellow-500" />
-            <h2 className="text-lg font-semibold">Conversazione</h2>
-          </div>
-          
-          <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-4 h-[50vh] overflow-y-auto space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                <p>Nessun messaggio ancora</p>
-                <p className="text-sm">Inizia la conversazione con l'utente</p>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    'max-w-[80%] p-4 rounded-lg',
-                    msg.fromAdmin
-                      ? 'ml-auto bg-yellow-500 text-black'
-                      : 'mr-auto bg-zinc-800 text-gray-100'
-                  )}
-                >
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {new Date(msg.createdAt).toLocaleString('it-IT')}
-                    {msg.fromAdmin && (
-                      <span className="ml-2 text-yellow-600 font-semibold">Admin</span>
-                    )}
-                  </p>
-                </div>
-              ))
-            )}
-            <div ref={bottomRef} />
-          </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-400">
+          <span>
+            Stato:{' '}
+            <span className={`font-medium ${
+              ticket.status === 'NEW'
+                ? 'text-red-400'
+                : ticket.status === 'IN_PROGRESS'
+                ? 'text-yellow-400'
+                : ticket.status === 'RESOLVED'
+                ? 'text-green-400'
+                : 'text-gray-400'
+            }`}>
+              {ticket.status}
+            </span>
+          </span>
+          <span>• Priorità: {ticket.priority}</span>
+          <span>• Categoria: {ticket.category}</span>
+          <span>• Assegnato a: {ticket.assignedTo || 'Nessuno'}</span>
+          <span>• Ultimo aggiornamento: {new Date(ticket.updatedAt).toLocaleString('it-IT')}</span>
         </div>
+      </div>
 
-        {/* INPUT MESSAGGIO */}
-        {ticket.locked && isAssignedToMe && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendReply()}
-                placeholder="Scrivi un messaggio all'utente..."
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                disabled={sending}
-              />
-              <Button
-                onClick={sendReply}
-                disabled={!reply.trim() || sending}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
-              >
-                {sending ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                {sending ? 'Invio...' : 'Invia'}
-              </Button>
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`flex flex-col ${
+              m.fromAdmin ? 'items-end' : 'items-start'
+            }`}
+          >
+            <div
+              className={`max-w-[80%] px-4 py-2 rounded-md text-sm ${
+                m.fromAdmin
+                  ? 'bg-yellow-500 text-black'
+                  : 'bg-neutral-800 text-gray-200'
+              }`}
+            >
+              {m.message}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Premi Invio per inviare il messaggio
-            </p>
+            <span className="text-[10px] text-gray-500 mt-1">
+              {new Date(m.createdAt).toLocaleString('it-IT')}
+              {m.fromAdmin && ' • Admin'}
+            </span>
           </div>
-        )}
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* INFO AGGIUNTIVE */}
-        {!ticket.locked && (
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-blue-300">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Ticket non assegnato</span>
-            </div>
-            <p className="text-xs mt-1">
-              Prendi in carico questo ticket per iniziare a rispondere all'utente
-            </p>
-          </div>
-        )}
-
-        {isLockedByOther && (
-          <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 text-orange-300">
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              <span className="text-sm font-medium">Ticket assegnato ad altro support</span>
-            </div>
-            <p className="text-xs mt-1">
-              Questo ticket è attualmente gestito da {ticket.assignedTo}
-            </p>
-          </div>
-        )}
+      {/* INPUT AREA */}
+      <div className="mt-3 border-t border-neutral-800 pt-3 flex gap-2">
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Scrivi una risposta..."
+          className="flex-1 bg-neutral-900 border border-neutral-800 rounded-md text-gray-100 text-sm p-2 resize-none focus:outline-none focus:ring-1 focus:ring-yellow-500"
+          rows={2}
+        />
+        <button
+          onClick={handleSend}
+          disabled={sending}
+          className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-md transition disabled:bg-yellow-500/40"
+        >
+          {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+        </button>
       </div>
     </div>
   );

@@ -1,148 +1,133 @@
 'use client';
 
-import { useTickets } from '@/hooks/useTickets';
-import { useSupportEvents } from '@/hooks/useSupportEvents';
-import { useSession } from '@/lib/useSession';
-import { TicketRow } from '@/components/support/TicketRow';
+import { useState, useEffect } from 'react';
+import { Search, Filter, Loader2 } from 'lucide-react';
+import { fetchAllTickets } from '@/lib/funkardApi';
 import Link from 'next/link';
-import { MessageSquare, RefreshCw, Filter, Search } from 'lucide-react';
 
-export default function SupportDashboardPage() {
-  const { tickets, loading, error, filters, setFilters, reload } = useTickets();
-  const { user } = useSession();
-  
-  // Inizializza eventi SSE per notifiche real-time
-  useSupportEvents(user?.role, user?.id);
+interface Ticket {
+  id: string;
+  subject: string;
+  email: string;
+  status: string;
+  updatedAt: string;
+}
+
+export default function SupportPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchAllTickets({ search, status });
+        setTickets(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [search, status]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <MessageSquare className="w-8 h-8 text-yellow-500" /> Gestione Ticket
-          </h1>
-          <button
-            onClick={reload}
-            className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl font-semibold text-yellow-500">Gestione Ticket</h1>
+
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cerca per email o oggetto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 pr-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-yellow-500"
+            />
+          </div>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="bg-neutral-900 border border-neutral-700 rounded-md text-sm text-gray-200 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-yellow-500"
           >
-            <RefreshCw className="w-4 h-4" /> Aggiorna
-          </button>
+            <option value="">Tutti</option>
+            <option value="NEW">Nuovi</option>
+            <option value="IN_PROGRESS">In lavorazione</option>
+            <option value="RESOLVED">Risolti</option>
+            <option value="CLOSED">Chiusi</option>
+          </select>
         </div>
+      </div>
 
-        {/* FILTRI AVANZATI */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-yellow-500" />
-            <h2 className="text-lg font-semibold">Filtri e Ricerca</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Cerca per email o oggetto..."
-                value={filters.search || ''}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="w-full bg-zinc-800 border border-zinc-700 px-10 py-2 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none"
-              />
-            </div>
+      {/* Tabella */}
+      <div className="border border-neutral-800 rounded-md overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-neutral-900 text-gray-400 border-b border-neutral-800">
+            <tr>
+              <th className="text-left py-3 px-4 font-medium">ID</th>
+              <th className="text-left py-3 px-4 font-medium">Oggetto</th>
+              <th className="text-left py-3 px-4 font-medium">Email</th>
+              <th className="text-left py-3 px-4 font-medium">Stato</th>
+              <th className="text-left py-3 px-4 font-medium">Ultimo aggiornamento</th>
+            </tr>
+          </thead>
 
-            <select
-              value={filters.status || ''}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none"
-            >
-              <option value="">Tutti gli stati</option>
-              <option value="NEW">Nuovi</option>
-              <option value="IN_PROGRESS">In corso</option>
-              <option value="RESOLVED">Risolti</option>
-              <option value="CLOSED">Chiusi</option>
-            </select>
-
-            <select
-              value={filters.priority || ''}
-              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              className="bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none"
-            >
-              <option value="">Tutte le priorità</option>
-              <option value="LOW">Bassa</option>
-              <option value="NORMAL">Normale</option>
-              <option value="HIGH">Alta</option>
-              <option value="URGENT">Urgente</option>
-            </select>
-
-            <select
-              value={filters.category || ''}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none"
-            >
-              <option value="">Tutte le categorie</option>
-              <option value="TECHNICAL">Tecnico</option>
-              <option value="BILLING">Pagamenti</option>
-              <option value="GENERAL">Generale</option>
-              <option value="GRADING">Grading</option>
-            </select>
-          </div>
-        </div>
-
-        {/* STATISTICHE RAPIDE */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-yellow-400">
-              {tickets.filter(t => t.status === 'NEW').length}
-            </div>
-            <div className="text-sm text-gray-400">Nuovi</div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-400">
-              {tickets.filter(t => t.status === 'IN_PROGRESS').length}
-            </div>
-            <div className="text-sm text-gray-400">In corso</div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-400">
-              {tickets.filter(t => t.status === 'RESOLVED').length}
-            </div>
-            <div className="text-sm text-gray-400">Risolti</div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-            <div className="text-2xl font-bold text-gray-400">
-              {tickets.filter(t => t.status === 'CLOSED').length}
-            </div>
-            <div className="text-sm text-gray-400">Chiusi</div>
-          </div>
-        </div>
-
-        {/* LISTA TICKET */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-400 flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              Caricamento ticket...
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-900/20 border border-red-500/50 text-red-400 p-4 rounded-lg">
-            {error}
-          </div>
-        ) : tickets.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-            <p className="text-lg">Nessun ticket trovato</p>
-            <p className="text-sm">Prova a modificare i filtri di ricerca</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {tickets.map((ticket) => (
-              <TicketRow 
-                key={ticket.id} 
-                ticket={ticket} 
-                onUpdate={reload}
-              />
-            ))}
-          </div>
-        )}
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-gray-400">
+                  <Loader2 className="inline mr-2 animate-spin" size={16} />
+                  Caricamento ticket...
+                </td>
+              </tr>
+            ) : tickets.length > 0 ? (
+              tickets.map((t) => (
+                <tr
+                  key={t.id}
+                  className="border-b border-neutral-800 hover:bg-neutral-900 transition-colors"
+                >
+                  <td className="py-3 px-4 text-gray-400">{t.id}</td>
+                  <td className="py-3 px-4 text-gray-100 font-medium">
+                    <Link href={`/dashboard/support/${t.id}`} className="hover:text-yellow-500">
+                      {t.subject}
+                    </Link>
+                  </td>
+                  <td className="py-3 px-4 text-gray-400">{t.email}</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded ${
+                        t.status === 'NEW'
+                          ? 'bg-red-500/20 text-red-400'
+                          : t.status === 'IN_PROGRESS'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : t.status === 'RESOLVED'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-neutral-700/30 text-gray-400'
+                      }`}
+                    >
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-400">
+                    {new Date(t.updatedAt).toLocaleString('it-IT')}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-gray-500">
+                  Nessun ticket trovato
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
