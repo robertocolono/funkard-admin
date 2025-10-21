@@ -9,6 +9,7 @@ import NotificationToast from "@/components/NotificationToast";
 import { useSupportStream } from "@/hooks/useSupportStream";
 import { useAdminSupportEvents } from "@/hooks/useAdminSupportEvents";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationProvider } from "@/context/NotificationContext";
 // import { useNotifications } from "@/lib/hooks/useNotifications";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -34,8 +35,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
       <body className="min-h-screen bg-gray-50 text-gray-900">
-        <div className="min-h-screen">
-          {children}
+        <NotificationProvider>
+          <div className="min-h-screen">
+            {children}
           
           {/* Toast Notifications - Temporaneamente disabilitato */}
           {/* {toastNotifications.map((notification) => (
@@ -77,6 +79,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 },
               }}
             />
+          </div>
+        </NotificationProvider>
       </body>
     </html>
   );

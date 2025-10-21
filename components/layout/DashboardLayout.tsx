@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Header } from "@/components/layout/Header"
-import { AdminNavbar } from "@/components/layout/AdminNavbar"
+import AdminNavbar from "@/components/admin/AdminNavbar"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)

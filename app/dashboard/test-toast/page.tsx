@@ -4,6 +4,7 @@ import { ToastTestPanel } from '@/components/admin/ToastTestPanel';
 import { SupportEventsExample } from '@/components/admin/SupportEventsExample';
 import { AdminSSETest } from '@/components/admin/AdminSSETest';
 import { AdminSimulator } from '@/components/admin/AdminSimulator';
+import { NotificationTest } from '@/components/admin/NotificationTest';
 import { useSupportStream } from '@/hooks/useSupportStream';
 
 export default function TestToastPage() {
@@ -32,6 +33,10 @@ export default function TestToastPage() {
 
         <div className="mt-8">
           <AdminSSETest />
+        </div>
+
+        <div className="mt-8">
+          <NotificationTest />
         </div>
 
         <div className="mt-8 p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
